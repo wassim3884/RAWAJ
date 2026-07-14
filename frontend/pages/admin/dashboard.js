@@ -4,15 +4,15 @@ import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 
 const links = [
-  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'Affiliates', icon: Users },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: Wallet },
-  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'Delivery Rates', icon: Tag },
-  { href: '/admin/wholesale', label: 'Wholesale', icon: Truck },
+  { href: '/admin/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'المسوّقون', icon: Users },
+  { href: '/admin/products', label: 'المنتجات', icon: Package },
+  { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
+  { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
-  { href: '/admin/settings', label: 'Site Settings', icon: Settings },
+  { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
 
 export default function AdminDashboard() {
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-2xl font-bold">Platform Overview</h1>
+        <h1 className="mb-6 text-2xl font-bold">نظرة عامة على المنصة</h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Total Revenue" value={`$${Number(data?.totalRevenue || 0).toFixed(2)}`} />

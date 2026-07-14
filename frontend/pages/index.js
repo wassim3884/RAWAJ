@@ -17,11 +17,19 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [openFaq, setOpenFaq] = useState(null);
+  const [hero, setHero] = useState({
+    headline: 'روّج للمنتجات، واربح من كل عملية بيع',
+    subheadline: 'رواج يمنحك كل ما تحتاجه للتسويق بالعمولة في مكان واحد.',
+    ctaText: 'تصفح المنتجات',
+  });
 
   useEffect(() => {
     if (!user) return;
     api.get('/categories').then(({ data }) => setCategories(data.categories)).catch(() => {});
     api.get('/products', { params: { featured: 'true', limit: 8 } }).then(({ data }) => setFeaturedProducts(data.products)).catch(() => {});
+    api.get('/settings/homepage_hero').then(({ data }) => {
+      if (data.value) setHero((prev) => ({ ...prev, ...data.value }));
+    }).catch(() => {});
   }, [user]);
 
   return (
@@ -30,14 +38,14 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-dark py-24 text-white">
         <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
           <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-            روّج للمنتجات، <span className="text-accent">واربح من كل عملية بيع</span>
+            {hero.headline}
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-white/90">
-            سوقلي يمنحك كتالوج منتجات جاهز، ومكتبة تسويقية كاملة لكل منتج، ونموذج طلب بسيط — شارك في أي مكان، وقدّم بيانات زبونك، ونتكفل بالباقي.
+            {hero.subheadline}
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/affiliate/products" className="rounded-xl bg-white px-6 py-3 font-semibold text-primary shadow-card hover:shadow-card-hover">
-              تصفح المنتجات
+              {hero.ctaText}
             </Link>
             <Link href="/affiliate/vip" className="rounded-xl border border-white/40 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur hover:bg-white/20">
               برنامج VIP

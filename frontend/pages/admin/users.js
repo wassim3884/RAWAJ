@@ -5,15 +5,15 @@ import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 
 const links = [
-  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'Affiliates', icon: Users },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: Wallet },
-  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'Delivery Rates', icon: Tag },
-  { href: '/admin/wholesale', label: 'Wholesale', icon: Truck },
+  { href: '/admin/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'المسوّقون', icon: Users },
+  { href: '/admin/products', label: 'المنتجات', icon: Package },
+  { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
+  { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
-  { href: '/admin/settings', label: 'Site Settings', icon: Settings },
+  { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
 
 export default function AdminUsers() {
@@ -38,7 +38,7 @@ export default function AdminUsers() {
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Users</h1>
+          <h1 className="text-2xl font-bold">المستخدمون</h1>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
             <option value="">All roles</option>

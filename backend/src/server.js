@@ -19,6 +19,7 @@ const vipRoutes = require('./routes/vip.routes');
 const storeRoutes = require('./routes/store.routes');
 const wishlistRoutes = require('./routes/wishlist.routes');
 const pushRoutes = require('./routes/push.routes');
+const settingsRoutes = require('./routes/settings.routes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/vip', vipRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found.' }));
 

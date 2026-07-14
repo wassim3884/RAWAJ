@@ -4,15 +4,15 @@ import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 
 const links = [
-  { href: '/affiliate/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'Browse Products', icon: Search },
-  { href: '/affiliate/upcoming', label: 'Coming Soon', icon: Clock },
-  { href: '/affiliate/saved', label: 'Saved', icon: Heart },
-  { href: '/affiliate/submit-order', label: 'Submit Order', icon: ClipboardList },
-  { href: '/affiliate/orders', label: 'My Orders', icon: Truck },
-  { href: '/affiliate/earnings', label: 'Earnings', icon: Wallet },
+  { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
+  { href: '/affiliate/products', label: 'تصفح المنتجات', icon: Search },
+  { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
+  { href: '/affiliate/submit-order', label: 'تقديم عرض', icon: ClipboardList },
+  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
+  { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
-  { href: '/affiliate/notifications', label: 'Notifications', icon: Bell },
+  { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
 ];
 
 export default function AffiliateDashboard() {
@@ -28,7 +28,7 @@ export default function AffiliateDashboard() {
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-2xl font-bold">Affiliate Overview</h1>
+        <h1 className="mb-6 text-2xl font-bold">نظرة عامة</h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Delivered Orders" value={stats?.deliveredOrders ?? '—'} />
