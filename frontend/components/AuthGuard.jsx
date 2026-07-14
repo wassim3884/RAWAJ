@@ -3,7 +3,10 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 
 // Paths reachable without being logged in.
-const PUBLIC_PATHS = ['/login', '/register', '/verify-email', '/verify-notice'];
+const PUBLIC_PATHS = [
+  '/login', '/register', '/verify-email', '/verify-notice',
+  '/about', '/blog', '/contact', '/faq', '/privacy-policy', '/terms-of-service',
+];
 // Path prefixes reachable without being logged in (public storefronts, wholesale funnel).
 const PUBLIC_PREFIXES = ['/store/', '/wholesale'];
 

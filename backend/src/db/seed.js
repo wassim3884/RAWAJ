@@ -116,6 +116,23 @@ async function seed() {
       })]
     );
 
+    // Footer content pages — edit anytime from Admin → Site Settings
+    const footerPages = [
+      ['about_content', 'من نحن', 'رواج منصة تسويق بالعمولة تربط المسوّقين بمنتجات جاهزة للبيع، مع مكتبة تسويقية كاملة ونظام عمولات شفاف.'],
+      ['blog_content', 'المدونة', 'قريبًا: مقالات ونصائح تسويقية لمساعدتك على زيادة مبيعاتك.'],
+      ['contact_content', 'اتصل بنا', 'للتواصل معنا، راسلنا عبر البريد الإلكتروني: support@rawaj.com'],
+      ['faq_content', 'الأسئلة الشائعة', 'كيف أصبح مسوّقًا؟ سجّل حسابًا مجانيًا وابدأ بتصفح المنتجات.\nكيف أستلم أرباحي؟ عبر BaridiMob أو Flexy أو RedotPay خلال 48 ساعة من التأكيد.'],
+      ['privacy_policy_content', 'سياسة الخصوصية', 'نحترم خصوصيتك. بياناتك الشخصية تُستخدم فقط لتشغيل حسابك على المنصة ولا تُشارك مع أي طرف ثالث دون إذنك.'],
+      ['terms_of_service_content', 'شروط الاستخدام', 'باستخدامك منصة رواج، فإنك توافق على الالتزام بقواعد المنصة وسياسة العمولات والتوصيل الموضحة في لوحة التحكم.'],
+    ];
+    for (const [key, title, body] of footerPages) {
+      await db.query(
+        `INSERT INTO site_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2`,
+        [key, JSON.stringify({ title, body })]
+      );
+    }
+
     console.log('✔ Seed complete. Admin login: admin@rawaj.com / Admin@12345');
   } catch (err) {
     console.error('✘ Seed failed:', err.message);

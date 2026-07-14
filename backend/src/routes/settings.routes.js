@@ -2,8 +2,17 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// Only these keys are safe to expose without admin auth — used by the homepage.
-const PUBLIC_KEYS = ['homepage_hero'];
+// Only these keys are safe to expose without admin auth — used by the homepage
+// and the public informational/legal pages linked from the footer.
+const PUBLIC_KEYS = [
+  'homepage_hero',
+  'about_content',
+  'blog_content',
+  'contact_content',
+  'faq_content',
+  'privacy_policy_content',
+  'terms_of_service_content',
+];
 
 /** GET /api/settings/:key  (public read of a safe-listed setting) */
 router.get('/:key', async (req, res) => {

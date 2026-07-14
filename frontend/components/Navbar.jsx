@@ -34,6 +34,7 @@ export default function Navbar() {
     { href: '/affiliate/upcoming', label: 'قادمة قريبًا' },
     { href: '/affiliate/saved', label: 'المحفوظة' },
     { href: '/affiliate/vip', label: 'VIP' },
+    { href: '/wholesale', label: 'الجملة' },
   ];
 
   const navItems = user?.role === 'affiliate' ? affiliateNav : [];
@@ -52,7 +53,6 @@ export default function Navbar() {
               {item.label}
             </Link>
           ))}
-          <Link href="/wholesale" className="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300">الجملة</Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -105,7 +105,6 @@ export default function Navbar() {
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>{item.label}</Link>
             ))}
-            <Link href="/wholesale" onClick={() => setOpen(false)}>الجملة</Link>
             {user ? (
               <>
                 <Link href={dashboardPath || '/'} onClick={() => setOpen(false)}>لوحة التحكم</Link>
