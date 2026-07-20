@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { createNotification } = require('./notification.controller');
+const { formatDZD } = require('../utils/currency');
 
 const profileTable = (role) => (role === 'seller' ? 'seller_profiles' : 'affiliate_profiles');
 
@@ -121,7 +122,7 @@ async function decideWithdrawal(req, res) {
     createNotification(
       withdrawal.user_id,
       'تحديث حالة السحب',
-      `طلب سحب $${Number(withdrawal.amount).toFixed(2)}: ${label}${adminNote ? ` — ${adminNote}` : ''}`
+      `طلب سحب ${formatDZD(withdrawal.amount)}: ${label}${adminNote ? ` — ${adminNote}` : ''}`
     ).catch(() => {});
 
     await client.query('COMMIT');

@@ -76,7 +76,7 @@ async function getAnalytics(req, res) {
       db.query(`SELECT role, COUNT(*) FROM users GROUP BY role`),
       db.query(`SELECT status, COUNT(*) FROM products GROUP BY status`),
       db.query(`SELECT order_status, COUNT(*) FROM orders GROUP BY order_status`),
-      db.query(`SELECT COALESCE(SUM(grand_total),0) AS total FROM orders WHERE payment_status = 'paid'`),
+      db.query(`SELECT COALESCE(SUM(final_total),0) AS total FROM orders WHERE order_status = 'delivered'`),
       db.query(`SELECT status, COALESCE(SUM(amount),0) AS total FROM commissions GROUP BY status`),
     ]);
     return res.json({

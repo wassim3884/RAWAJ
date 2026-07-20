@@ -11,6 +11,7 @@ router.post(
     body('fullName').trim().notEmpty().withMessage('Full name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('phone').matches(/^0[567]\d{8}$/).withMessage('رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام.'),
   ],
   validate,
   ctrl.register

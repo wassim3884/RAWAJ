@@ -3,6 +3,8 @@ import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clo
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { useLanguage } from '../../context/LanguageContext';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -17,10 +19,11 @@ const links = [
 ];
 
 export default function SubmitOrder() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [wilayas, setWilayas] = useState([]);
   const [form, setForm] = useState({
-    productId: '', buyerName: '', buyerPhone: '', wilayaId: '', deliveryType: 'home', notes: '',
+    productId: '', buyerName: '', buyerPhone: '', wilayaId: '', deliveryType: 'home', notes: '', commissionAmount: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,9 +39,9 @@ export default function SubmitOrder() {
   const selectedWilaya = wilayas.find((w) => String(w.id) === String(form.wilayaId));
 
   const breakdown = useMemo(() => {
-    if (!selectedProduct || !selectedWilaya) return null;
+    if (!selectedProduct || !selectedWilaya || form.commissionAmount === '') return null;
     const productPrice = Number(selectedProduct.price);
-    const commission = (productPrice * Number(selectedProduct.commission_percent)) / 100;
+    const commission = Number(form.commissionAmount) || 0;
     const deliveryFee = form.deliveryType === 'office'
       ? Number(selectedWilaya.delivery_fee_office)
       : Number(selectedWilaya.delivery_fee_home);
@@ -48,19 +51,19 @@ export default function SubmitOrder() {
       deliveryFee,
       total: productPrice + commission + deliveryFee,
     };
-  }, [selectedProduct, selectedWilaya, form.deliveryType]);
+  }, [selectedProduct, selectedWilaya, form.commissionAmount, form.deliveryType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!breakdown) {
-      toast.error('Please select a product and a wilaya first.');
+      toast.error('يرجى اختيار منتج وولاية وكتابة عمولتك أولاً.');
       return;
     }
     setSubmitting(true);
     try {
-      await api.post('/orders', form);
-      toast.success('Order submitted! Our team will call the buyer to confirm.');
-      setForm({ productId: '', buyerName: '', buyerPhone: '', wilayaId: '', deliveryType: 'home', notes: '' });
+      await api.post('/orders', { ...form, commissionAmount: Number(form.commissionAmount) || 0 });
+      toast.success('تم إرسال الطلب! سيتصل فريقنا بالزبون للتأكيد.');
+      setForm({ productId: '', buyerName: '', buyerPhone: '', wilayaId: '', deliveryType: 'home', notes: '', commissionAmount: '' });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to submit order.');
     } finally {
@@ -72,78 +75,83 @@ export default function SubmitOrder() {
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-2 text-2xl font-bold">تقديم عرض</h1>
+        <h1 className="mb-2 text-2xl font-bold">{t('تقديم عرض')}</h1>
         <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-          Got an interested buyer? Enter their details below — our team will call them to confirm before shipping.
+          وجدت زبونًا مهتمًا؟ أدخل بياناته أدناه — سيتصل فريقنا به للتأكيد قبل الشحن.
         </p>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <form onSubmit={handleSubmit} className="card lg:col-span-2 space-y-4">
-            <Field label="Product">
+            <Field label="المنتج">
               <select required value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} className="input">
-                <option value="">Select a product...</option>
+                <option value="">اختر منتجًا...</option>
                 {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.title} — ${Number(p.price).toFixed(2)}</option>
+                  <option key={p.id} value={p.id}>{p.title} — {formatDZD(p.price)}</option>
                 ))}
               </select>
               {!products.length && (
                 <p className="mt-1 text-xs text-amber-600">
-                  You have no approved products yet. Go to &quot;Browse Products&quot; and request approval first.
+                  لا توجد منتجات معتمدة بعد. اذهب إلى &quot;تصفح المنتجات&quot; واطلب الموافقة أولاً.
                 </p>
               )}
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Buyer's Name">
+              <Field label="اسم الزبون">
                 <input required value={form.buyerName} onChange={(e) => setForm({ ...form, buyerName: e.target.value })} className="input" />
               </Field>
-              <Field label="Buyer's Phone">
+              <Field label="هاتف الزبون">
                 <input required value={form.buyerPhone} onChange={(e) => setForm({ ...form, buyerPhone: e.target.value })} className="input" placeholder="05XX XX XX XX" />
               </Field>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Wilaya">
+              <Field label="الولاية">
                 <select required value={form.wilayaId} onChange={(e) => setForm({ ...form, wilayaId: e.target.value })} className="input">
-                  <option value="">Select wilaya...</option>
+                  <option value="">اختر الولاية...</option>
                   {wilayas.map((w) => (
                     <option key={w.id} value={w.id}>{w.code} — {w.name_ar} / {w.name_fr}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="Delivery Type">
+              <Field label="نوع التوصيل">
                 <select value={form.deliveryType} onChange={(e) => setForm({ ...form, deliveryType: e.target.value })} className="input">
-                  <option value="home">Home Delivery</option>
-                  <option value="office">Office / Stopdesk</option>
+                  <option value="home">توصيل للمنزل</option>
+                  <option value="office">مكتب / Stopdesk</option>
                 </select>
               </Field>
             </div>
 
-            <Field label="Notes (address details, buyer preferences, etc.)">
+            <Field label="عمولتك (د.ج) — أضفها فوق التكلفة كما تريد">
+              <input required type="number" min="0" step="1" value={form.commissionAmount}
+                onChange={(e) => setForm({ ...form, commissionAmount: e.target.value })} className="input" placeholder="مثال: 500" />
+            </Field>
+
+            <Field label="ملاحظات (تفاصيل العنوان، تفضيلات الزبون...)">
               <textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input" />
             </Field>
 
             <button type="submit" disabled={submitting || !breakdown} className="btn-primary w-full">
-              {submitting ? 'Submitting...' : 'Submit Order'}
+              {submitting ? 'جاري الإرسال...' : 'تقديم الطلب'}
             </button>
           </form>
 
           <div className="card h-fit">
-            <h2 className="mb-4 font-semibold">Price Breakdown</h2>
+            <h2 className="mb-4 font-semibold">تفصيل السعر</h2>
             {breakdown ? (
               <div className="space-y-3 text-sm">
-                <Row label="Product price" value={breakdown.productPrice} />
-                <Row label="Your commission" value={breakdown.commission} accent />
-                <Row label="Delivery fee" value={breakdown.deliveryFee} />
+                <Row label="سعر المنتج (تكلفتك)" value={breakdown.productPrice} />
+                <Row label="عمولتك" value={breakdown.commission} accent />
+                <Row label="مصاريف التوصيل" value={breakdown.deliveryFee} />
                 <div className="border-t border-slate-200 pt-3 dark:border-slate-700">
-                  <Row label="Total (quote to buyer)" value={breakdown.total} bold />
+                  <Row label="الإجمالي (اعرضه على الزبون)" value={breakdown.total} bold />
                 </div>
                 <p className="mt-3 rounded-lg bg-primary/5 p-3 text-xs text-slate-500 dark:text-slate-400">
-                  This is the exact amount the buyer pays on delivery (COD). Share this total with them before submitting.
+                  هذا هو المبلغ الذي يدفعه الزبون عند التسليم (الدفع عند الاستلام). شاركه معه قبل تأكيد الطلب.
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-slate-400">Select a product and a wilaya to see the price breakdown.</p>
+              <p className="text-sm text-slate-400">اختر منتجًا وولاية واكتب عمولتك لرؤية تفصيل السعر.</p>
             )}
           </div>
         </div>
@@ -176,7 +184,7 @@ function Row({ label, value, accent, bold }) {
   return (
     <div className="flex justify-between">
       <span className={accent ? 'text-accent' : 'text-slate-500'}>{label}</span>
-      <span className={bold ? 'text-lg font-bold' : 'font-medium'}>${Number(value).toFixed(2)}</span>
+      <span className={bold ? 'text-lg font-bold' : 'font-medium'}>{formatDZD(value)}</span>
     </div>
   );
 }

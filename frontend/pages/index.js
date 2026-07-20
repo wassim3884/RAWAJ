@@ -4,6 +4,7 @@ import { ShoppingBag, Users, TrendingUp, DollarSign, Search, ChevronDown } from 
 import api from '../lib/api';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const STEPS = [
   { title: 'أنشئ حسابك', desc: 'سجّل كمسوّق بالعمولة وابدأ بتصفح المنتجات المتاحة.', icon: Users },
@@ -14,6 +15,7 @@ const STEPS = [
 
 export default function Home() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [openFaq, setOpenFaq] = useState(null);
@@ -48,7 +50,7 @@ export default function Home() {
               {hero.ctaText}
             </Link>
             <Link href="/affiliate/vip" className="rounded-xl border border-white/40 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur hover:bg-white/20">
-              برنامج VIP
+              {t('برنامج VIP')}
             </Link>
           </div>
         </div>
@@ -56,7 +58,7 @@ export default function Home() {
 
       {/* CATEGORIES */}
       <section id="categories" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-8 text-2xl font-bold text-slate-900 dark:text-white">تصفح حسب الفئة</h2>
+        <h2 className="mb-8 text-2xl font-bold text-slate-900 dark:text-white">{t('تصفح حسب الفئة')}</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
           {categories.map((cat) => (
             <Link key={cat.slug} href={`/products?category=${cat.slug}`} className="card flex flex-col items-center gap-2 text-center !p-4">
@@ -66,7 +68,7 @@ export default function Home() {
               <span className="text-sm font-medium">{cat.name}</span>
             </Link>
           ))}
-          {!categories.length && <p className="col-span-full text-slate-400">لا توجد فئات بعد.</p>}
+          {!categories.length && <p className="col-span-full text-slate-400">{t('لا توجد فئات بعد.')}</p>}
         </div>
       </section>
 
@@ -74,30 +76,30 @@ export default function Home() {
       <section className="bg-slate-50 py-16 dark:bg-slate-900">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">الأكثر رواجًا</h2>
-            <Link href="/affiliate/products" className="text-sm font-medium text-primary">عرض الكل ←</Link>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('الأكثر رواجًا')}</h2>
+            <Link href="/affiliate/products" className="text-sm font-medium text-primary">{t('عرض الكل ←')}</Link>
           </div>
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {featuredProducts.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
-            {!featuredProducts.length && <p className="col-span-full text-slate-400">لم يتم تحديد منتجات رائجة بعد.</p>}
+            {!featuredProducts.length && <p className="col-span-full text-slate-400">{t('لم يتم تحديد منتجات رائجة بعد.')}</p>}
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-10 text-center text-2xl font-bold text-slate-900 dark:text-white">كيف تعمل المنصة</h2>
+        <h2 className="mb-10 text-center text-2xl font-bold text-slate-900 dark:text-white">{t('كيف تعمل المنصة')}</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, i) => (
             <div key={step.title} className="card text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <step.icon size={26} />
               </div>
-              <p className="mb-1 text-sm font-semibold text-accent">الخطوة {i + 1}</p>
-              <h3 className="mb-2 font-bold">{step.title}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{step.desc}</p>
+              <p className="mb-1 text-sm font-semibold text-accent">{t('الخطوة')} {i + 1}</p>
+              <h3 className="mb-2 font-bold">{t(step.title)}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t(step.desc)}</p>
             </div>
           ))}
         </div>

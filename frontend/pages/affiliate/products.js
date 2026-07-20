@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart, Megaphone } from 'lucide-react';
+import Image from 'next/image';
+import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
+import { useLanguage } from '../../context/LanguageContext';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -17,7 +20,13 @@ const links = [
   { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
 ];
 
+const STATUS_BADGE = {
+  approved: { label: 'معتمد لك', color: 'bg-green-100 text-green-700' },
+  pending: { label: 'بانتظار الموافقة', color: 'bg-amber-100 text-amber-700' },
+};
+
 export default function AffiliateProducts() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [savedIds, setSavedIds] = useState(new Set());
@@ -37,17 +46,8 @@ export default function AffiliateProducts() {
 
   useEffect(() => { load(); }, [category]);
 
-  const requestApproval = async (productId) => {
-    try {
-      await api.post('/affiliate/requests', { productId });
-      toast.success('Approval requested!');
-      load();
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Request failed.');
-    }
-  };
-
-  const toggleSave = async (product) => {
+  const toggleSave = async (e, product) => {
+    e.preventDefault();
     try {
       if (savedIds.has(product.id)) {
         await api.delete(`/wishlist/${product.id}`);
@@ -62,73 +62,56 @@ export default function AffiliateProducts() {
     }
   };
 
-  const subscribeRestock = async (productId) => {
-    try {
-      await api.post(`/products/${productId}/notify-restock`);
-      toast.success('سنُعلمك عند توفر المنتج.');
-    } catch {
-      toast.error('حدث خطأ.');
-    }
-  };
-
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-2xl font-bold">تصفح المنتجات</h1>
+        <h1 className="mb-2 text-2xl font-bold">{t('تصفح المنتجات')}</h1>
+        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">اضغط على أي منتج أعجبك لرؤية تفاصيله وتقديم عرض لزبونك مباشرة.</p>
 
         <div className="mb-6 flex flex-wrap gap-2">
           <input
             value={query} onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
-            placeholder="Search products..."
+            placeholder="ابحث عن منتج..."
             className="w-full max-w-sm rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
           />
           <select value={category} onChange={(e) => setCategory(e.target.value)}
             className="rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900">
-            <option value="">All categories</option>
+            <option value="">كل الفئات</option>
             {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
           </select>
-          <button onClick={load} className="btn-outline">Search</button>
+          <button onClick={load} className="btn-outline">بحث</button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
-            <div key={p.id} className="card relative">
-              <button onClick={() => toggleSave(p)} className="absolute left-4 top-4 text-slate-300 hover:text-red-500">
-                <Heart size={18} fill={savedIds.has(p.id) ? 'currentColor' : 'none'} className={savedIds.has(p.id) ? 'text-red-500' : ''} />
-              </button>
-
-              {p.category_name && <span className="text-xs font-medium uppercase tracking-wide text-primary">{p.category_name}</span>}
-              <p className="font-semibold">{p.title}</p>
-              <p className="text-sm text-slate-500">${Number(p.price).toFixed(2)} · {p.commission_percent}% commission</p>
-
-              {p.status === 'out_of_stock' ? (
-                <div className="mt-3">
-                  <span className="mb-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">نفدت الكمية</span>
-                  <button onClick={() => subscribeRestock(p.id)} className="btn-outline w-full !py-2 text-sm">
-                    نبهني عند التوفر
-                  </button>
-                </div>
-              ) : p.request_status === 'approved' ? (
-                <div className="mt-3 space-y-2">
-                  <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
-                    Approved — go to &quot;Submit Order&quot;
-                  </span>
-                  <Link href={`/affiliate/marketing/${p.id}`} className="btn-outline flex w-full items-center justify-center gap-1 !py-2 text-sm">
-                    <Megaphone size={14} /> المكتبة التسويقية
-                  </Link>
-                </div>
-              ) : p.request_status === 'pending' ? (
-                <span className="mt-3 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Pending approval</span>
-              ) : (
-                <button onClick={() => requestApproval(p.id)} className="btn-primary mt-3 w-full !py-2 text-sm">
-                  Request to Promote
+          {products.map((p) => {
+            const badge = STATUS_BADGE[p.request_status];
+            return (
+              <Link key={p.id} href={`/affiliate/products/${p.slug}`} className="card relative block !p-0 overflow-hidden">
+                <button onClick={(e) => toggleSave(e, p)} className="absolute left-3 top-3 z-10 rounded-full bg-white/90 p-2 text-slate-400 hover:text-red-500 dark:bg-slate-800/90">
+                  <Heart size={16} fill={savedIds.has(p.id) ? 'currentColor' : 'none'} className={savedIds.has(p.id) ? 'text-red-500' : ''} />
                 </button>
-              )}
-            </div>
-          ))}
-          {!products.length && <p className="text-slate-400">No products found.</p>}
+
+                <div className="relative aspect-square bg-slate-100 dark:bg-slate-800">
+                  {p.primary_image && <Image src={p.primary_image} alt={p.title} fill className="object-cover" />}
+                  {p.status === 'out_of_stock' && (
+                    <span className="absolute right-3 top-3 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">نفدت الكمية</span>
+                  )}
+                  {badge && (
+                    <span className={`absolute bottom-3 right-3 rounded-full px-2 py-0.5 text-xs font-medium ${badge.color}`}>{badge.label}</span>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  {p.category_name && <span className="text-xs font-medium uppercase tracking-wide text-primary">{p.category_name}</span>}
+                  <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">{p.title}</p>
+                  <p className="mt-1 text-sm text-slate-500">تكلفتك: {formatDZD(p.price)}</p>
+                </div>
+              </Link>
+            );
+          })}
+          {!products.length && <p className="col-span-full text-slate-400">لا توجد منتجات.</p>}
         </div>
       </div>
     </div>

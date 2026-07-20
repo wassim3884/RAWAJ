@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck, Store } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
@@ -10,8 +10,8 @@ const links = [
   { href: '/admin/products', label: 'المنتجات', icon: Package },
   { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
   { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
-  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Truck },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Store },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
   { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
@@ -76,10 +76,10 @@ export default function AdminVip() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900">
               <tr>
-                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">الاسم</th>
                 <th className="px-4 py-3">Email / Phone</th>
-                <th className="px-4 py-3">Delivered Orders</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">طلبات مسلَّمة</th>
+                <th className="px-4 py-3">الحالة</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>

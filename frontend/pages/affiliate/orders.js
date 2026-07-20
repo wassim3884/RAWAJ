@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -54,8 +55,8 @@ export default function AffiliateOrders() {
                   </div>
                   <div className="text-left">
                     <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${meta.color}`}>{meta.label}</span>
-                    <p className="mt-2 text-sm text-slate-500">عمولتك: <span className="font-semibold text-accent">${Number(o.commission_amount).toFixed(2)}</span></p>
-                    <p className="text-sm font-semibold">${Number(o.final_total).toFixed(2)}</p>
+                    <p className="mt-2 text-sm text-slate-500">عمولتك: <span className="font-semibold text-accent">{formatDZD(o.commission_amount)}</span></p>
+                    <p className="text-sm font-semibold">{formatDZD(o.final_total)}</p>
                   </div>
                 </div>
 

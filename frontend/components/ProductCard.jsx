@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Heart } from 'lucide-react';
+import { formatDZD } from '../lib/currency';
 
 export default function ProductCard({ product }) {
   return (
@@ -43,9 +44,9 @@ export default function ProductCard({ product }) {
         )}
 
         <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-lg font-bold text-slate-900 dark:text-white">${Number(product.price).toFixed(2)}</span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white">{formatDZD(product.price)}</span>
           {product.compare_at_price && (
-            <span className="text-sm text-slate-400 line-through">${Number(product.compare_at_price).toFixed(2)}</span>
+            <span className="text-sm text-slate-400 line-through">{formatDZD(product.compare_at_price)}</span>
           )}
         </div>
       </div>

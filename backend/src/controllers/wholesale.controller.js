@@ -108,7 +108,61 @@ async function getTelegramUrl(req, res) {
   }
 }
 
+/** POST /api/wholesale/search-requests  (public — merchant describes what they want) */
+async function createSearchRequest(req, res) {
+  const { description, imageUrls = [], whatsappNumber } = req.body;
+  if (!description || !whatsappNumber) {
+    return res.status(400).json({ error: 'description and whatsappNumber are required.' });
+  }
+  try {
+    const result = await db.query(
+      `INSERT INTO product_search_requests (description, image_urls, whatsapp_number)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [description, JSON.stringify(imageUrls), whatsappNumber]
+    );
+    return res.status(201).json({ request: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to submit request.' });
+  }
+}
+
+/** GET /api/wholesale/search-requests  (admin) */
+async function listSearchRequests(req, res) {
+  const { status } = req.query;
+  try {
+    const query = status
+      ? 'SELECT * FROM product_search_requests WHERE status = $1 ORDER BY created_at DESC'
+      : 'SELECT * FROM product_search_requests ORDER BY created_at DESC';
+    const result = await db.query(query, status ? [status] : []);
+    return res.json({ requests: result.rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to fetch requests.' });
+  }
+}
+
+/** PUT /api/wholesale/search-requests/:id  (admin) */
+async function updateSearchRequest(req, res) {
+  const { id } = req.params;
+  const { status, adminNote } = req.body;
+  try {
+    const result = await db.query(
+      `UPDATE product_search_requests SET
+         status = COALESCE($1, status), admin_note = COALESCE($2, admin_note)
+       WHERE id = $3 RETURNING *`,
+      [status, adminNote, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Request not found.' });
+    return res.json({ request: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update request.' });
+  }
+}
+
 module.exports = {
   listWholesaleProducts, createWholesaleProduct, listWholesaleProductsAdmin,
   updateWholesaleProduct, deleteWholesaleProduct, getTelegramUrl,
+  createSearchRequest, listSearchRequests, updateSearchRequest,
 };

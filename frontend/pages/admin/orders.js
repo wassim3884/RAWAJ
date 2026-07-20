@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Phone, Crown, Truck } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Phone, Crown, Truck, Store } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/admin/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -10,8 +11,8 @@ const links = [
   { href: '/admin/products', label: 'المنتجات', icon: Package },
   { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
   { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
-  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Truck },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Store },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
   { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
@@ -96,8 +97,8 @@ export default function AdminOrders() {
 
                 <div className="text-right">
                   <p className="text-sm text-slate-500">الإجمالي (عند التسليم)</p>
-                  <p className="text-xl font-bold">${Number(o.final_total).toFixed(2)}</p>
-                  <p className="text-xs text-slate-400">منتج ${Number(o.product_price).toFixed(2)} + عمولة ${Number(o.commission_amount).toFixed(2)} + توصيل ${Number(o.delivery_fee).toFixed(2)}</p>
+                  <p className="text-xl font-bold">{formatDZD(o.final_total)}</p>
+                  <p className="text-xs text-slate-400">منتج {formatDZD(o.product_price)} + عمولة {formatDZD(o.commission_amount)} + توصيل {formatDZD(o.delivery_fee)}</p>
                 </div>
               </div>
 

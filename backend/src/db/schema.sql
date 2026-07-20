@@ -139,6 +139,7 @@ CREATE TABLE product_images (
     id                  BIGSERIAL PRIMARY KEY,
     product_id          BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     image_url           TEXT NOT NULL,
+    category            VARCHAR(20) NOT NULL DEFAULT 'catalog', -- 'catalog' | 'real' | 'landing'
     sort_order          INTEGER DEFAULT 0,
     is_primary          BOOLEAN DEFAULT FALSE
 );
@@ -364,6 +365,22 @@ CREATE TABLE wholesale_products (
 );
 
 -- ---------------------------------------------------------
+-- WHOLESALE PRODUCT SEARCH REQUESTS — a merchant/affiliate can't
+-- find what they want in the catalog above, so they describe it here.
+-- The admin sources it, finds price + minimum order quantity, then
+-- contacts them back directly on WhatsApp.
+-- ---------------------------------------------------------
+CREATE TABLE product_search_requests (
+    id                  BIGSERIAL PRIMARY KEY,
+    description         TEXT NOT NULL,
+    image_urls          JSONB DEFAULT '[]',
+    whatsapp_number     VARCHAR(30) NOT NULL,
+    status               VARCHAR(20) DEFAULT 'pending', -- pending | contacted | closed
+    admin_note           TEXT,
+    created_at           TIMESTAMP DEFAULT NOW()
+);
+
+-- ---------------------------------------------------------
 -- MARKETING KIT — ready-made assets per product so affiliates
 -- don't have to create ad content from scratch.
 -- ---------------------------------------------------------
@@ -429,6 +446,7 @@ CREATE INDEX idx_order_items_affiliate ON order_items(affiliate_id);
 CREATE INDEX idx_commissions_affiliate ON commissions(affiliate_id, status);
 CREATE INDEX idx_notifications_user ON notifications(user_id, is_read);
 CREATE INDEX idx_wholesale_products_category ON wholesale_products(category_id);
+CREATE INDEX idx_search_requests_status ON product_search_requests(status);
 CREATE INDEX idx_product_interests_product ON product_interests(product_id);
 CREATE INDEX idx_stock_notifications_product ON stock_notifications(product_id);
 CREATE INDEX idx_push_subscriptions_user ON push_subscriptions(user_id);

@@ -5,7 +5,7 @@ async function listMyWishlist(req, res) {
   try {
     const result = await db.query(
       `SELECT p.*, c.name AS category_name,
-              (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary LIMIT 1) AS primary_image,
+              (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               w.added_at
        FROM wishlists w
        JOIN products p ON p.id = w.product_id

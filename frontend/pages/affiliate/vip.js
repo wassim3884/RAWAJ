@@ -3,6 +3,7 @@ import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Sta
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -117,34 +118,34 @@ export default function AffiliateVip() {
 
               <form onSubmit={saveStore} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Store URL (slug)">
+                  <Field label="رابط المتجر">
                     <input required value={form.storeSlug} onChange={(e) => setForm({ ...form, storeSlug: e.target.value })} className="input" placeholder="my-store" />
                   </Field>
-                  <Field label="Headline">
+                  <Field label="العنوان الرئيسي">
                     <input value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} className="input" />
                   </Field>
                 </div>
-                <Field label="Subheadline">
+                <Field label="الوصف الفرعي">
                   <textarea rows={2} value={form.subheadline} onChange={(e) => setForm({ ...form, subheadline: e.target.value })} className="input" />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <Field label="Banner Image URL">
+                  <Field label="رابط صورة الغلاف">
                     <input value={form.bannerUrl} onChange={(e) => setForm({ ...form, bannerUrl: e.target.value })} className="input" />
                   </Field>
-                  <Field label="Contact Phone">
+                  <Field label="رقم الهاتف">
                     <input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} className="input" />
                   </Field>
-                  <Field label="Telegram / WhatsApp">
+                  <Field label="تيليغرام / واتساب">
                     <input value={form.contactTelegram} onChange={(e) => setForm({ ...form, contactTelegram: e.target.value })} className="input" />
                   </Field>
                 </div>
 
-                <Field label="Featured Products">
+                <Field label="المنتجات المميزة">
                   <div className="grid max-h-56 gap-2 overflow-y-auto rounded-xl border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-2">
                     {approvedProducts.map((p) => (
                       <label key={p.id} className="flex items-center gap-2 text-sm">
                         <input type="checkbox" checked={form.productIds.includes(p.id)} onChange={() => toggleProduct(p.id)} />
-                        {p.title} — ${Number(p.price).toFixed(2)}
+                        {p.title} — {formatDZD(p.price)}
                       </label>
                     ))}
                     {!approvedProducts.length && <p className="text-sm text-slate-400">No approved products yet.</p>}

@@ -1,7 +1,7 @@
 const { nanoid } = require('nanoid');
 const db = require('../config/db');
-const { calculateCommission } = require('../utils/commission');
 const { createNotification } = require('./notification.controller');
+const { formatDZD } = require('../utils/currency');
 
 /**
  * POST /api/orders  (affiliate submits a lead — a buyer they found off-platform)
@@ -15,10 +15,14 @@ const { createNotification } = require('./notification.controller');
  * the buyer and confirm before anything ships (COD model).
  */
 async function createOrder(req, res) {
-  const { productId, buyerName, buyerPhone, wilayaId, deliveryType = 'home', notes } = req.body;
+  const { productId, buyerName, buyerPhone, wilayaId, deliveryType = 'home', notes, commissionAmount } = req.body;
 
-  if (!productId || !buyerName || !buyerPhone || !wilayaId) {
-    return res.status(400).json({ error: 'productId, buyerName, buyerPhone and wilayaId are required.' });
+  if (!productId || !buyerName || !buyerPhone || !wilayaId || commissionAmount === undefined) {
+    return res.status(400).json({ error: 'productId, buyerName, buyerPhone, wilayaId and commissionAmount are required.' });
+  }
+  const commission = Number(commissionAmount);
+  if (Number.isNaN(commission) || commission < 0) {
+    return res.status(400).json({ error: 'commissionAmount must be a non-negative number.' });
   }
 
   const client = await db.getClient();
@@ -50,8 +54,11 @@ async function createOrder(req, res) {
     }
 
     const deliveryFee = deliveryType === 'office' ? Number(wilaya.delivery_fee_office) : Number(wilaya.delivery_fee_home);
-    const commissionAmount = calculateCommission(product.price, 1, product.commission_percent);
-    const finalTotal = Number(product.price) + commissionAmount + deliveryFee;
+    // The affiliate sets their own commission amount per order — the admin's
+    // product price is treated purely as their cost, and doesn't dictate what
+    // the affiliate charges on top.
+    const commissionAmount_ = Math.round(commission * 100) / 100;
+    const finalTotal = Number(product.price) + commissionAmount_ + deliveryFee;
 
     const orderNumber = 'SGL-' + nanoid(10).toUpperCase();
 
@@ -62,9 +69,11 @@ async function createOrder(req, res) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending')
        RETURNING *`,
       [orderNumber, req.user.id, buyerName, buyerPhone, wilayaId, deliveryType, notes || null,
-        product.price, commissionAmount, deliveryFee, finalTotal]
+        product.price, commissionAmount_, deliveryFee, finalTotal]
     );
     const order = orderResult.rows[0];
+
+    const effectivePercent = Number(product.price) > 0 ? (commissionAmount_ / Number(product.price)) * 100 : 0;
 
     await client.query(
       `INSERT INTO order_items
@@ -72,19 +81,19 @@ async function createOrder(req, res) {
          commission_percent, commission_amount, line_total)
        VALUES ($1,$2,$3,1,$4,$5,$6,$7)`,
       [order.id, product.id, req.user.id, product.price,
-        product.commission_percent, commissionAmount, product.price]
+        effectivePercent, commissionAmount_, product.price]
     );
 
     // Commission starts pending — confirmed only once the order is delivered
     await client.query(
       `INSERT INTO commissions (order_item_id, affiliate_id, amount, status)
        VALUES ((SELECT id FROM order_items WHERE order_id = $1), $2, $3, 'pending')`,
-      [order.id, req.user.id, commissionAmount]
+      [order.id, req.user.id, commissionAmount_]
     );
 
     await client.query(
       'UPDATE affiliate_profiles SET pending_balance = pending_balance + $1 WHERE user_id = $2',
-      [commissionAmount, req.user.id]
+      [commissionAmount_, req.user.id]
     );
 
     await client.query('COMMIT');
@@ -199,7 +208,7 @@ async function updateOrderStatus(req, res) {
         createNotification(
           comm.affiliate_id,
           'تم احتساب عمولتك',
-          `تم تسليم طلب "${order.order_number}" بنجاح وتم احتساب عمولة قدرها $${Number(comm.amount).toFixed(2)} وإضافتها لرصيدك القابل للسحب.`
+          `تم تسليم طلب "${order.order_number}" بنجاح وتم احتساب عمولة قدرها ${formatDZD(comm.amount)} وإضافتها لرصيدك القابل للسحب.`
         ).catch(() => {});
       }
       await client.query(`UPDATE orders SET payment_status = 'paid' WHERE id = $1`, [id]);

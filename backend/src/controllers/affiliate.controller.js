@@ -89,7 +89,7 @@ async function browseProducts(req, res) {
   try {
     const result = await db.query(
       `SELECT p.*, c.name AS category_name,
-              (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary LIMIT 1) AS primary_image,
+              (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               apr.status AS request_status
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id

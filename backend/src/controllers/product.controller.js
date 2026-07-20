@@ -9,9 +9,10 @@ const { notifyOnStatusChange } = require('./interest.controller');
  */
 async function createProduct(req, res) {
   const {
-    title, description, price, commissionPercent = 10, stockQuantity = 0,
-    categoryId, sku, shippingInfo = {}, images = [], requiresApproval = true, vipPrice,
+    title, description, price, stockQuantity = 0,
+    categoryId, sku, shippingInfo = {}, requiresApproval = true, vipPrice,
     status = 'active',
+    catalogImages = [], realImages = [], landingImages = [], videoUrls = [],
   } = req.body;
 
   if (!title || price === undefined) {
@@ -26,22 +27,41 @@ async function createProduct(req, res) {
     await client.query('BEGIN');
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + nanoid(6);
 
+    // No commission_percent is collected from the admin anymore — the affiliate
+    // sets their own markup per order (see order.controller.js). The column is
+    // kept for schema compatibility and defaults to 0 here.
     const productResult = await client.query(
       `INSERT INTO products
         (seller_id, category_id, title, slug, description, price, commission_percent,
          stock_quantity, sku, shipping_info, requires_approval, vip_price, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       VALUES ($1,$2,$3,$4,$5,$6,0,$7,$8,$9,$10,$11,$12)
        RETURNING *`,
       [req.user.id, categoryId || null, title, slug, description, price,
-        commissionPercent, stockQuantity, sku, shippingInfo, requiresApproval, vipPrice || null, status]
+        stockQuantity, sku, shippingInfo, requiresApproval, vipPrice || null, status]
     );
     const product = productResult.rows[0];
 
-    for (let i = 0; i < images.length; i++) {
+    const imageGroups = [
+      { category: 'catalog', urls: catalogImages },
+      { category: 'real', urls: realImages },
+      { category: 'landing', urls: landingImages },
+    ];
+    for (const group of imageGroups) {
+      for (let i = 0; i < group.urls.length; i++) {
+        await client.query(
+          `INSERT INTO product_images (product_id, image_url, category, sort_order, is_primary)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [product.id, group.urls[i], group.category, i, group.category === 'catalog' && i === 0]
+        );
+      }
+    }
+
+    if (videoUrls.length) {
       await client.query(
-        `INSERT INTO product_images (product_id, image_url, sort_order, is_primary)
-         VALUES ($1, $2, $3, $4)`,
-        [product.id, images[i], i, i === 0]
+        `INSERT INTO product_marketing_assets (product_id, video_urls)
+         VALUES ($1, $2)
+         ON CONFLICT (product_id) DO UPDATE SET video_urls = $2, updated_at = NOW()`,
+        [product.id, JSON.stringify(videoUrls)]
       );
     }
 
@@ -160,7 +180,7 @@ async function listProducts(req, res) {
   try {
     const query = `
       SELECT p.*, c.name AS category_name, c.slug AS category_slug,
-             (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary LIMIT 1) AS primary_image
+             (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${conditions.join(' AND ')}
@@ -179,18 +199,19 @@ async function getProductBySlug(req, res) {
   const { slug } = req.params;
   try {
     const productResult = await db.query(
-      `SELECT p.*, c.name AS category_name, s.store_name, s.store_slug
+      `SELECT p.*, c.name AS category_name,
+              apr.status AS request_status
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
-       LEFT JOIN seller_profiles s ON s.user_id = p.seller_id
+       LEFT JOIN affiliate_product_requests apr ON apr.product_id = p.id AND apr.affiliate_id = $2
        WHERE p.slug = $1`,
-      [slug]
+      [slug, req.user?.id || null]
     );
     if (!productResult.rows.length) return res.status(404).json({ error: 'Product not found.' });
     const product = productResult.rows[0];
 
     const [images, reviews] = await Promise.all([
-      db.query('SELECT image_url, is_primary FROM product_images WHERE product_id = $1 ORDER BY sort_order', [product.id]),
+      db.query('SELECT image_url, category, is_primary FROM product_images WHERE product_id = $1 ORDER BY sort_order', [product.id]),
       db.query(
         `SELECT r.rating, r.comment, r.created_at, u.full_name
          FROM product_reviews r JOIN users u ON u.id = r.customer_id
@@ -201,7 +222,13 @@ async function getProductBySlug(req, res) {
 
     db.query('UPDATE products SET views_count = views_count + 1 WHERE id = $1', [product.id]).catch(() => {});
 
-    return res.json({ product, images: images.rows, reviews: reviews.rows });
+    const groupedImages = {
+      catalog: images.rows.filter((i) => i.category === 'catalog'),
+      real: images.rows.filter((i) => i.category === 'real'),
+      landing: images.rows.filter((i) => i.category === 'landing'),
+    };
+
+    return res.json({ product, images: groupedImages, reviews: reviews.rows });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to fetch product.' });
@@ -212,7 +239,7 @@ async function getProductBySlug(req, res) {
 async function listMyProducts(req, res) {
   try {
     const result = await db.query(
-      `SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary LIMIT 1) AS primary_image,
+      `SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               (SELECT COUNT(*) FROM product_interests pi WHERE pi.product_id = p.id) AS interest_count,
               (SELECT COUNT(*) FROM stock_notifications sn WHERE sn.product_id = p.id) AS restock_subscriber_count
        FROM products p WHERE seller_id = $1 ORDER BY created_at DESC`,
@@ -230,7 +257,7 @@ async function listUpcomingProducts(req, res) {
   try {
     const result = await db.query(
       `SELECT p.*, c.name AS category_name,
-              (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary LIMIT 1) AS primary_image,
+              (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               (SELECT COUNT(*) FROM product_interests pi WHERE pi.product_id = p.id) AS interest_count,
               EXISTS(SELECT 1 FROM product_interests pi WHERE pi.product_id = p.id AND pi.affiliate_id = $1) AS is_interested
        FROM products p

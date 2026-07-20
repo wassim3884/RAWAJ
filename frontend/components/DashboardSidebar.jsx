@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function DashboardSidebar({ links }) {
   const router = useRouter();
+  const { t } = useLanguage();
   return (
     <aside className="w-full shrink-0 border-r border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 md:w-56">
       <nav className="space-y-1">
@@ -17,7 +19,7 @@ export default function DashboardSidebar({ links }) {
             }`}
           >
             <link.icon size={18} />
-            {link.label}
+            {t(link.label)}
           </Link>
         ))}
       </nav>

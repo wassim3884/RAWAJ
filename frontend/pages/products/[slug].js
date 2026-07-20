@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { Star } from 'lucide-react';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function ProductDetail() {
   }, [slug]);
 
   if (loading) return <div className="p-16 text-center text-slate-400">جاري التحميل...</div>;
-  if (!product) return <div className="p-16 text-center">Product not found.</div>;
+  if (!product) return <div className="p-16 text-center">المنتج غير موجود.</div>;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -54,24 +55,24 @@ export default function ProductDetail() {
           {product.avg_rating > 0 && (
             <div className="mt-2 flex items-center gap-1 text-amber-500">
               <Star size={16} fill="currentColor" />
-              <span className="text-sm">{Number(product.avg_rating).toFixed(1)} ({reviews?.length || 0} reviews)</span>
+              <span className="text-sm">{Number(product.avg_rating).toFixed(1)} ({reviews?.length || 0} تقييم)</span>
             </div>
           )}
 
-          <p className="mt-4 text-3xl font-extrabold">${Number(product.price).toFixed(2)}</p>
+          <p className="mt-4 text-3xl font-extrabold">{formatDZD(product.price)}</p>
           {product.vip_price && (
-            <p className="text-sm text-accent">سعر VIP: ${Number(product.vip_price).toFixed(2)}</p>
+            <p className="text-sm text-accent">سعر VIP: {formatDZD(product.vip_price)}</p>
           )}
           <p className="mt-4 text-slate-600 dark:text-slate-300">{product.description}</p>
           <p className="mt-2 text-sm text-slate-500">عمولتك: {product.commission_percent}%</p>
 
-          <p className="mt-4 text-sm text-slate-500">{product.stock_quantity} in stock</p>
+          <p className="mt-4 text-sm text-slate-500">متوفر: {product.stock_quantity} قطعة</p>
         </div>
       </div>
 
       {/* Reviews */}
       <div className="mt-16">
-        <h2 className="mb-6 text-xl font-bold">Customer Reviews</h2>
+        <h2 className="mb-6 text-xl font-bold">تقييمات الزبائن</h2>
         <div className="space-y-4">
           {(reviews || []).map((r, i) => (
             <div key={i} className="card">
@@ -84,7 +85,7 @@ export default function ProductDetail() {
               <p className="text-sm text-slate-600 dark:text-slate-300">{r.comment}</p>
             </div>
           ))}
-          {!reviews?.length && <p className="text-sm text-slate-400">No reviews yet.</p>}
+          {!reviews?.length && <p className="text-sm text-slate-400">لا توجد تقييمات بعد.</p>}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck, Store } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
@@ -10,8 +10,8 @@ const links = [
   { href: '/admin/products', label: 'المنتجات', icon: Package },
   { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
   { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
-  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Truck },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Store },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
   { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
@@ -41,11 +41,11 @@ export default function AdminUsers() {
           <h1 className="text-2xl font-bold">المستخدمون</h1>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
-            <option value="">All roles</option>
-            <option value="seller">Sellers</option>
-            <option value="affiliate">Affiliates</option>
-            <option value="customer">Customers</option>
-            <option value="admin">Admins</option>
+            <option value="">كل الأدوار</option>
+            <option value="seller">البائعون</option>
+            <option value="affiliate">المسوّقون</option>
+            <option value="customer">الزبائن</option>
+            <option value="admin">المدراء</option>
           </select>
         </div>
 
@@ -53,11 +53,11 @@ export default function AdminUsers() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Joined</th>
+                <th className="px-4 py-3">الاسم</th>
+                <th className="px-4 py-3">البريد الإلكتروني</th>
+                <th className="px-4 py-3">الدور</th>
+                <th className="px-4 py-3">الحالة</th>
+                <th className="px-4 py-3">تاريخ الانضمام</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -80,7 +80,7 @@ export default function AdminUsers() {
                   </td>
                 </tr>
               ))}
-              {!users.length && <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">No users found.</td></tr>}
+              {!users.length && <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">لا يوجد مستخدمون.</td></tr>}
             </tbody>
           </table>
         </div>

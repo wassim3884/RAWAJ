@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Wallet, Settings, Tag, Crown, Truck, Store } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/admin/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -10,8 +11,8 @@ const links = [
   { href: '/admin/products', label: 'المنتجات', icon: Package },
   { href: '/admin/orders', label: 'الطلبات', icon: Wallet },
   { href: '/admin/withdrawals', label: 'السحوبات', icon: Wallet },
-  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Tag },
-  { href: '/admin/wholesale', label: 'الجملة', icon: Truck },
+  { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Truck },
+  { href: '/admin/wholesale', label: 'الجملة', icon: Store },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
   { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
@@ -76,7 +77,16 @@ export default function AdminWithdrawals() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold">{w.full_name} ({w.email})</p>
-                    <p className="text-sm text-slate-500">الطريقة: {w.method} · التفاصيل: {JSON.stringify(w.payout_details?.email || w.payout_details)}</p>
+                    {w.method === 'products' && Array.isArray(w.payout_details?.products) ? (
+                      <div className="mt-1 text-sm text-slate-500">
+                        <p className="font-medium">استلام كمنتجات:</p>
+                        <ul className="list-inside list-disc">
+                          {w.payout_details.products.map((p, i) => <li key={i}>{p.title} — {Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })} د.ج</li>)}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">الطريقة: {w.method} · التفاصيل: {w.payout_details?.contact || JSON.stringify(w.payout_details)}</p>
+                    )}
                     <p className="text-xs text-slate-400">طُلب في {new Date(w.requested_at).toLocaleString()}</p>
                     {w.status === 'approved' && (
                       <p className={`mt-1 text-xs font-medium ${overdue ? 'text-red-500' : 'text-indigo-500'}`}>
@@ -88,7 +98,7 @@ export default function AdminWithdrawals() {
                     <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[w.status]}`}>
                       {STATUS_OPTIONS.find((s) => s.value === w.status)?.label}
                     </span>
-                    <p className="mt-2 text-xl font-bold">${Number(w.amount).toFixed(2)}</p>
+                    <p className="mt-2 text-xl font-bold">{formatDZD(w.amount)}</p>
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@ import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clo
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -51,7 +52,7 @@ export default function UpcomingProducts() {
             <div key={p.id} className="card">
               {p.category_name && <span className="text-xs font-medium uppercase tracking-wide text-primary">{p.category_name}</span>}
               <p className="font-semibold">{p.title}</p>
-              <p className="text-sm text-slate-500">${Number(p.price).toFixed(2)}</p>
+              <p className="text-sm text-slate-500">{formatDZD(p.price)}</p>
               <p className="mt-1 text-xs text-slate-400">{p.interest_count} مسوّق مهتم بهذا المنتج</p>
               <button
                 onClick={() => toggleInterest(p)}

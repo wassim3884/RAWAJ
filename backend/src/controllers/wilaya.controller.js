@@ -52,4 +52,18 @@ async function updateWilaya(req, res) {
   }
 }
 
-module.exports = { listWilayas, createWilaya, updateWilaya };
+/** GET /api/wilayas/all — admin: list every wilaya, including disabled ones */
+async function listAllWilayasAdmin(req, res) {
+  try {
+    const result = await db.query(
+      `SELECT id, code, name_ar, name_fr, delivery_fee_home, delivery_fee_office, is_active
+       FROM wilayas ORDER BY code`
+    );
+    return res.json({ wilayas: result.rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to fetch wilayas.' });
+  }
+}
+
+module.exports = { listWilayas, listAllWilayasAdmin, createWilaya, updateWilaya };

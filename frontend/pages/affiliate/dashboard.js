@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
+import { useLanguage } from '../../context/LanguageContext';
+import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -16,6 +18,7 @@ const links = [
 ];
 
 export default function AffiliateDashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -28,13 +31,13 @@ export default function AffiliateDashboard() {
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-2xl font-bold">نظرة عامة</h1>
+        <h1 className="mb-6 text-2xl font-bold">{t('نظرة عامة')}</h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="Delivered Orders" value={stats?.deliveredOrders ?? '—'} />
-          <StatCard label="Available Balance" value={`$${Number(stats?.profile?.balance || 0).toFixed(2)}`} highlight />
+          <StatCard label={t('طلبات تم تسليمها')} value={stats?.deliveredOrders ?? '—'} />
+          <StatCard label={t('الرصيد المتاح')} value={`${formatDZD(stats?.profile?.balance || 0)}`} highlight />
           <div className="card">
-            <p className="text-sm text-slate-500 dark:text-slate-400">VIP Progress</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('تقدّم VIP')}</p>
             <p className="mt-1 text-2xl font-bold">{stats?.deliveredOrders ?? 0} / 30</p>
             <div className="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
               <div className="h-2 rounded-full bg-accent" style={{ width: `${vipProgress}%` }} />
@@ -43,9 +46,9 @@ export default function AffiliateDashboard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <MoneyCard label="Pending Commissions" value={stats?.commissions?.pending} color="amber" />
-          <MoneyCard label="Confirmed Commissions" value={stats?.commissions?.confirmed} color="blue" />
-          <MoneyCard label="Paid Commissions" value={stats?.commissions?.paid} color="green" />
+          <MoneyCard label={t('عمولات معلّقة')} value={stats?.commissions?.pending} color="amber" />
+          <MoneyCard label={t('عمولات مؤكدة')} value={stats?.commissions?.confirmed} color="blue" />
+          <MoneyCard label={t('عمولات مدفوعة')} value={stats?.commissions?.paid} color="green" />
         </div>
       </div>
     </div>
@@ -70,7 +73,7 @@ function MoneyCard({ label, value, color }) {
   return (
     <div className={`rounded-2xl p-6 ${colorMap[color]}`}>
       <p className="text-sm opacity-80">{label}</p>
-      <p className="mt-1 text-2xl font-bold">${Number(value || 0).toFixed(2)}</p>
+      <p className="mt-1 text-2xl font-bold">{formatDZD(value || 0)}</p>
     </div>
   );
 }

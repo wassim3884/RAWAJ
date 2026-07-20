@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import { Phone, Send } from 'lucide-react';
 import api from '../../lib/api';
+import { formatDZD } from '../../lib/currency';
 
 export default function VipStore({ store, products }) {
   if (!store) {
-    return <div className="p-16 text-center text-slate-400">This store is not available.</div>;
+    return <div className="p-16 text-center text-slate-400">هذا المتجر غير متوفر حاليًا.</div>;
   }
 
   return (
@@ -36,7 +37,7 @@ export default function VipStore({ store, products }) {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-8 text-2xl font-bold">Our Products</h2>
+        <h2 className="mb-8 text-2xl font-bold">منتجاتنا</h2>
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
           {products.map((p) => {
             const displayPrice = p.vip_price || p.price;
@@ -48,14 +49,14 @@ export default function VipStore({ store, products }) {
                 <div className="p-4">
                   <p className="font-semibold">{p.title}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="text-lg font-bold">${Number(displayPrice).toFixed(2)}</span>
-                    {p.vip_price && <span className="text-sm text-slate-400 line-through">${Number(p.price).toFixed(2)}</span>}
+                    <span className="text-lg font-bold">{formatDZD(displayPrice)}</span>
+                    {p.vip_price && <span className="text-sm text-slate-400 line-through">{formatDZD(p.price)}</span>}
                   </div>
                 </div>
               </div>
             );
           })}
-          {!products.length && <p className="text-slate-400">No products featured yet.</p>}
+          {!products.length && <p className="text-slate-400">لا توجد منتجات معروضة بعد.</p>}
         </div>
       </section>
     </div>

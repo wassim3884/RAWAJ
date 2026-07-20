@@ -14,8 +14,13 @@ const { sendEmail } = require('../utils/email');
 async function register(req, res) {
   const { fullName, email, password, phone } = req.body;
 
-  if (!fullName || !email || !password) {
-    return res.status(400).json({ error: 'fullName, email and password are required.' });
+  if (!fullName || !email || !password || !phone) {
+    return res.status(400).json({ error: 'fullName, email, password and phone are required.' });
+  }
+
+  // Algerian mobile numbers: start with 05, 06, or 07, followed by 8 more digits (10 digits total).
+  if (!/^0[567]\d{8}$/.test(phone)) {
+    return res.status(400).json({ error: 'رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام.' });
   }
 
   const client = await db.getClient();
