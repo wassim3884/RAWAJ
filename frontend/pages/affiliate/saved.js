@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, MapPin, Clock, Heart } from 'lucide-react';
+import { LayoutDashboard, Search, Wallet, Bell, Truck, Crown, Clock, Heart, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
@@ -9,7 +9,8 @@ const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
   { href: '/affiliate/products', label: 'منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },  
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
+  { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
   { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
@@ -46,7 +47,7 @@ export default function SavedProducts() {
             <div key={p.id} className="card">
               {p.category_name && <span className="text-xs font-medium uppercase tracking-wide text-primary">{p.category_name}</span>}
               <p className="font-semibold">{p.title}</p>
-              <p className="text-sm text-slate-500">{formatDZD(p.price)} · {p.commission_percent}% عمولة</p>
+              <p className="text-sm text-slate-500">{formatDZD(p.price)}</p>
               <button onClick={() => remove(p.id)} className="mt-3 text-sm text-red-500">إزالة من القائمة</button>
             </div>
           ))}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, MapPin, Clock, Heart } from 'lucide-react';
+import { LayoutDashboard, Search, Wallet, Bell, Truck, Crown, Clock, Heart, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
@@ -8,10 +8,11 @@ import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: ' منتجات', icon: Search },
+  { href: '/affiliate/products', label: 'منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-{ href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },  
-{ href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
+  { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
+  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
   { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
@@ -27,7 +28,6 @@ export default function SubmitOrder() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Only products this affiliate is approved to promote (or that don't require approval)
     api.get('/affiliate/products').then(({ data }) => {
       setProducts(data.products.filter((p) => p.request_status === 'approved' || !p.requires_approval));
     }).catch(() => {});
@@ -44,12 +44,7 @@ export default function SubmitOrder() {
     const deliveryFee = form.deliveryType === 'office'
       ? Number(selectedWilaya.delivery_fee_office)
       : Number(selectedWilaya.delivery_fee_home);
-    return {
-      productPrice,
-      commission,
-      deliveryFee,
-      total: productPrice + commission + deliveryFee,
-    };
+    return { productPrice, commission, deliveryFee, total: productPrice + commission + deliveryFee };
   }, [selectedProduct, selectedWilaya, form.commissionAmount, form.deliveryType]);
 
   const handleSubmit = async (e) => {
@@ -90,7 +85,7 @@ export default function SubmitOrder() {
               </select>
               {!products.length && (
                 <p className="mt-1 text-xs text-amber-600">
-                  لا توجد منتجات معتمدة بعد. اذهب إلى &quot;تصفح المنتجات&quot; واطلب الموافقة أولاً.
+                  لا توجد منتجات معتمدة بعد. اذهب إلى &quot;منتجات&quot; واطلب الموافقة أولاً.
                 </p>
               )}
             </Field>
@@ -145,9 +140,6 @@ export default function SubmitOrder() {
                 <div className="border-t border-slate-200 pt-3 dark:border-slate-700">
                   <Row label="الإجمالي (اعرضه على الزبون)" value={breakdown.total} bold />
                 </div>
-                <p className="mt-3 rounded-lg bg-primary/5 p-3 text-xs text-slate-500 dark:text-slate-400">
-                  هذا هو المبلغ الذي يدفعه الزبون عند التسليم (الدفع عند الاستلام). شاركه معه قبل تأكيد الطلب.
-                </p>
               </div>
             ) : (
               <p className="text-sm text-slate-400">اختر منتجًا وولاية واكتب عمولتك لرؤية تفصيل السعر.</p>

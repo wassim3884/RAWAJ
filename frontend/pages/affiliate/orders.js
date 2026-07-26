@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, MapPin, Clock, Heart } from 'lucide-react';
+import { LayoutDashboard, Search, Wallet, Bell, Truck, Crown, Clock, Heart, MapPin } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 import { formatDZD } from '../../lib/currency';
@@ -8,7 +8,8 @@ const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
   { href: '/affiliate/products', label: 'منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
+  { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
   { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
@@ -59,7 +60,6 @@ export default function AffiliateOrders() {
                   </div>
                 </div>
 
-                {/* Simple progress track for the "happy path" */}
                 {!isFailed && (
                   <div className="mt-4 flex items-center gap-1">
                     {['pending', 'confirmed', 'processing', 'shipped', 'delivered'].map((step, i, arr) => {
