@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart } from 'lucide-react';
+import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, MapPin, Clock, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
@@ -8,11 +8,10 @@ import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'تصفح المنتجات', icon: Search },
+  { href: '/affiliate/products', label: ' منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
-  { href: '/affiliate/submit-order', label: 'تقديم عرض', icon: ClipboardList },
-  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
+{ href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },  
+{ href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
   { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },

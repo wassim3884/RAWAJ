@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Search, Wallet, Bell, ClipboardList, Truck, Crown, Clock, Heart } from 'lucide-react';
+import { LayoutDashboard, Search, Wallet, Bell, Truck, Crown, Clock, Heart, MapPin } from 'lucide-react';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
-import { useLanguage } from '../../context/LanguageContext';
 import { formatDZD } from '../../lib/currency';
 
 const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'تصفح المنتجات', icon: Search },
+  { href: '/affiliate/products', label: 'منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
-  { href: '/affiliate/submit-order', label: 'تقديم عرض', icon: ClipboardList },
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
+  { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
   { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
   { href: '/affiliate/vip', label: 'VIP', icon: Crown },
@@ -18,7 +17,6 @@ const links = [
 ];
 
 export default function AffiliateDashboard() {
-  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -31,13 +29,13 @@ export default function AffiliateDashboard() {
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-2xl font-bold">{t('نظرة عامة')}</h1>
+        <h1 className="mb-6 text-2xl font-bold">نظرة عامة</h1>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label={t('طلبات تم تسليمها')} value={stats?.deliveredOrders ?? '—'} />
-          <StatCard label={t('الرصيد المتاح')} value={`${formatDZD(stats?.profile?.balance || 0)}`} highlight />
+          <StatCard label="طلبات تم تسليمها" value={stats?.deliveredOrders ?? '—'} />
+          <StatCard label="الرصيد المتاح" value={formatDZD(stats?.profile?.balance || 0)} highlight />
           <div className="card">
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t('تقدّم VIP')}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">تقدّم VIP</p>
             <p className="mt-1 text-2xl font-bold">{stats?.deliveredOrders ?? 0} / 30</p>
             <div className="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
               <div className="h-2 rounded-full bg-accent" style={{ width: `${vipProgress}%` }} />
@@ -46,9 +44,9 @@ export default function AffiliateDashboard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <MoneyCard label={t('عمولات معلّقة')} value={stats?.commissions?.pending} color="amber" />
-          <MoneyCard label={t('عمولات مؤكدة')} value={stats?.commissions?.confirmed} color="blue" />
-          <MoneyCard label={t('عمولات مدفوعة')} value={stats?.commissions?.paid} color="green" />
+          <MoneyCard label="عمولات معلّقة" value={stats?.commissions?.pending} color="amber" />
+          <MoneyCard label="عمولات مؤكدة" value={stats?.commissions?.confirmed} color="blue" />
+          <MoneyCard label="عمولات مدفوعة" value={stats?.commissions?.paid} color="green" />
         </div>
       </div>
     </div>
