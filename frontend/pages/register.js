@@ -25,7 +25,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(form);
-      toast.success(t('Account created! Please check your email to verify.'));
+      toast.success('تم إنشاء الحساب بنجاح، يمكنك تسجيل الدخول مباشرة.');
       router.push('/affiliate/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed.');
