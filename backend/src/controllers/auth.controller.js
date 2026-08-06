@@ -182,26 +182,26 @@ async function me(req, res) {
 /** POST /api/auth/resend-verification  (authenticated — regenerates and resends the verification email) */
 async function resendVerification(req, res) {
   try {
-    const result = await db.query('SELECT id, full_name, email, is_email_verified FROM users WHERE id = $1', [req.user.id]);
+    const result = await db.query(
+      'SELECT id, full_name, email, is_email_verified FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
     const user = result.rows[0];
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (user.is_email_verified) return res.status(400).json({ error: 'Your email is already verified.' });
 
-    const emailVerifyToken = crypto.randomBytes(32).toString('hex');
-    await db.query('UPDATE users SET email_verify_token = $1 WHERE id = $2', [emailVerifyToken, user.id]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
 
-    const verifyUrl = `${process.env.CLIENT_URL}/verify-email?token=${emailVerifyToken}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'Verify your Rawaj account',
-      html: `<p>Hi ${user.full_name},</p><p>Please verify your email by clicking the link below:</p><a href="${verifyUrl}">${verifyUrl}</a>`,
+    return res.json({
+      message: 'Email verification is disabled during development.'
     });
 
-    return res.json({ message: 'Verification email sent.' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Failed to resend verification email.' });
+    return res.status(500).json({
+      error: 'Failed to resend verification email.'
+    });
   }
 }
-
 module.exports = { register, login, verifyEmail, refresh, me, resendVerification };
