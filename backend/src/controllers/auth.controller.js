@@ -1,105 +1,184 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { nanoid } = require('nanoid');
+
 const db = require('../config/db');
-const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/jwt');
-const { sendEmail } = require('../utils/email');
-// مؤقتًا أثناء التطوير: نعتبر البريد متحققًا منه
-// عند إطلاق الموقع سنعيد تفعيل التحقق عبر Resend.
-const emailVerifyToken = null;
-/**
- * POST /api/auth/register
- * Public registration is affiliate-only in this single-vendor model — the
- * admin account is created via the seed script, not through this endpoint.
- * body: { fullName, email, password, phone? }
- */
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} = require('../utils/jwt');
+
+
+// ============================================================
+// REGISTER
+// POST /api/auth/register
+// ============================================================
+
 async function register(req, res) {
   const { fullName, email, password, phone } = req.body;
 
   if (!fullName || !email || !password || !phone) {
-    return res.status(400).json({ error: 'fullName, email, password and phone are required.' });
+    return res.status(400).json({
+      error: 'fullName, email, password and phone are required.',
+    });
   }
 
-  // Algerian mobile numbers: start with 05, 06, or 07, followed by 8 more digits (10 digits total).
+  // Algerian mobile number validation
   if (!/^0[567]\d{8}$/.test(phone)) {
-    return res.status(400).json({ error: 'رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام.' });
+    return res.status(400).json({
+      error:
+        'رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام.',
+    });
   }
 
   const client = await db.getClient();
+
   try {
     await client.query('BEGIN');
 
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    // Check if email already exists
+    const existing = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
     if (existing.rows.length) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'An account with this email already exists.' });
+
+      return res.status(409).json({
+        error: 'An account with this email already exists.',
+      });
     }
 
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
-    const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
+    /*
+     * ========================================================
+     * TEMPORARY DEVELOPMENT MODE
+     * ========================================================
+     *
+     * Email verification is temporarily disabled.
+     * The account will be created as verified.
+     *
+     * When Rawaj is ready for production, we will restore
+     * Resend email verification.
+     */
+
+    const emailVerifyToken = null;
+
+    // Create user
     const userResult = await client.query(
-      `INSERT INTO users (full_name, email, password_hash, role, phone, email_verify_token)
-       VALUES ($1, $2, $3, 'affiliate', $4, $5)
-       RETURNING id, full_name, email, role, is_email_verified, created_at`,
-      [fullName, email.toLowerCase(), passwordHash, phone || null, emailVerifyToken]
+      `INSERT INTO users (
+        full_name,
+        email,
+        password_hash,
+        role,
+        phone,
+        email_verify_token,
+        is_email_verified
+      )
+      VALUES ($1, $2, $3, 'affiliate', $4, $5, TRUE)
+      RETURNING
+        id,
+        full_name,
+        email,
+        role,
+        is_email_verified,
+        created_at`,
+      [
+        fullName,
+        email.toLowerCase(),
+        passwordHash,
+        phone,
+        emailVerifyToken,
+      ]
     );
+
     const user = userResult.rows[0];
 
+    // Create affiliate profile
     const referralCode = 'AFF-' + nanoid(8).toUpperCase();
+
     await client.query(
-      `INSERT INTO affiliate_profiles (user_id, referral_code) VALUES ($1, $2)`,
+      `INSERT INTO affiliate_profiles (
+        user_id,
+        referral_code
+      )
+      VALUES ($1, $2)`,
       [user.id, referralCode]
     );
 
     await client.query('COMMIT');
 
-    // Fire-and-forget verification email
-    const verifyUrl = `${process.env.CLIENT_URL}/verify-email?token=${emailVerifyToken}`;
-    sendEmail({
-      to: user.email,
-      subject: 'Verify your Rawaj account',
-      html: `<p>Hi ${fullName},</p><p>Please verify your email by clicking the link below:</p><a href="${verifyUrl}">${verifyUrl}</a>`,
-    }).catch((e) => console.error('Email send failed:', e.message));
+    /*
+     * No email is sent here during development.
+     */
 
+    // Create tokens
     const accessToken = signAccessToken(user);
     const refreshToken = signRefreshToken(user);
 
     return res.status(201).json({
-      message: 'Account created. Please check your email to verify your account.',
+      message: 'Account created successfully.',
       user,
       accessToken,
       refreshToken,
     });
+
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(err);
-    return res.status(500).json({ error: 'Registration failed.' });
+
+    console.error('Registration error:', err);
+
+    return res.status(500).json({
+      error: 'Registration failed.',
+    });
+
   } finally {
     client.release();
   }
 }
 
-/**
- * POST /api/auth/login
- * body: { email, password }
- */
+
+// ============================================================
+// LOGIN
+// POST /api/auth/login
+// ============================================================
+
 async function login(req, res) {
   const { email, password } = req.body;
+
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+    return res.status(400).json({
+      error: 'Email and password are required.',
+    });
   }
 
   try {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+    const result = await db.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
     const user = result.rows[0];
+
     if (!user || !user.is_active) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({
+        error: 'Invalid credentials.',
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({
+        error: 'Invalid credentials.',
+      });
     }
 
     const safeUser = {
@@ -114,96 +193,225 @@ async function login(req, res) {
     const accessToken = signAccessToken(safeUser);
     const refreshToken = signRefreshToken(safeUser);
 
-    return res.json({ user: safeUser, accessToken, refreshToken });
+    return res.json({
+      user: safeUser,
+      accessToken,
+      refreshToken,
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Login failed.' });
+    console.error('Login error:', err);
+
+    return res.status(500).json({
+      error: 'Login failed.',
+    });
   }
 }
 
-/**
- * GET /api/auth/verify-email?token=...
- */
+
+// ============================================================
+// VERIFY EMAIL
+// GET /api/auth/verify-email?token=...
+// ============================================================
+
 async function verifyEmail(req, res) {
   const { token } = req.query;
-  if (!token) return res.status(400).json({ error: 'Token is required.' });
+
+  if (!token) {
+    return res.status(400).json({
+      error: 'Token is required.',
+    });
+  }
 
   try {
     const result = await db.query(
-      `UPDATE users SET is_email_verified = TRUE, email_verify_token = NULL
-       WHERE email_verify_token = $1 RETURNING id, email`,
+      `UPDATE users
+       SET
+         is_email_verified = TRUE,
+         email_verify_token = NULL
+       WHERE email_verify_token = $1
+       RETURNING id, email`,
       [token]
     );
+
     if (!result.rows.length) {
-      return res.status(400).json({ error: 'Invalid or expired verification token.' });
+      return res.status(400).json({
+        error: 'Invalid or expired verification token.',
+      });
     }
-    return res.json({ message: 'Email verified successfully.' });
+
+    return res.json({
+      message: 'Email verified successfully.',
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Verification failed.' });
+    console.error('Email verification error:', err);
+
+    return res.status(500).json({
+      error: 'Verification failed.',
+    });
   }
 }
 
-/**
- * POST /api/auth/refresh
- * body: { refreshToken }
- */
+
+// ============================================================
+// REFRESH TOKEN
+// POST /api/auth/refresh
+// ============================================================
+
 async function refresh(req, res) {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(400).json({ error: 'refreshToken is required.' });
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      error: 'refreshToken is required.',
+    });
+  }
 
   try {
     const payload = verifyRefreshToken(refreshToken);
-    const result = await db.query('SELECT id, full_name, email, role, avatar_url, is_email_verified FROM users WHERE id = $1', [payload.id]);
+
+    const result = await db.query(
+      `SELECT
+        id,
+        full_name,
+        email,
+        role,
+        avatar_url,
+        is_email_verified
+       FROM users
+       WHERE id = $1`,
+      [payload.id]
+    );
+
     const user = result.rows[0];
-    if (!user) return res.status(401).json({ error: 'User not found.' });
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'User not found.',
+      });
+    }
 
     const accessToken = signAccessToken(user);
-    return res.json({ accessToken });
+
+    return res.json({
+      accessToken,
+    });
+
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired refresh token.' });
+    return res.status(401).json({
+      error: 'Invalid or expired refresh token.',
+    });
   }
 }
 
-/** GET /api/auth/me */
+
+// ============================================================
+// GET CURRENT USER
+// GET /api/auth/me
+// ============================================================
+
 async function me(req, res) {
   try {
     const result = await db.query(
-      `SELECT id, full_name, email, role, avatar_url, language, is_email_verified, created_at
-       FROM users WHERE id = $1`,
+      `SELECT
+        id,
+        full_name,
+        email,
+        role,
+        avatar_url,
+        language,
+        is_email_verified,
+        created_at
+       FROM users
+       WHERE id = $1`,
       [req.user.id]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
-    return res.json({ user: result.rows[0] });
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        error: 'User not found.',
+      });
+    }
+
+    return res.json({
+      user: result.rows[0],
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Failed to fetch profile.' });
+    console.error('Profile error:', err);
+
+    return res.status(500).json({
+      error: 'Failed to fetch profile.',
+    });
   }
 }
 
-/** POST /api/auth/resend-verification  (authenticated — regenerates and resends the verification email) */
+
+// ============================================================
+// RESEND VERIFICATION
+// POST /api/auth/resend-verification
+// ============================================================
+
 async function resendVerification(req, res) {
+  /*
+   * Email verification is temporarily disabled during development.
+   */
+
   try {
     const result = await db.query(
-      'SELECT id, full_name, email, is_email_verified FROM users WHERE id = $1',
+      `SELECT
+        id,
+        full_name,
+        email,
+        is_email_verified
+       FROM users
+       WHERE id = $1`,
       [req.user.id]
     );
 
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+      return res.status(404).json({
+        error: 'User not found.',
+      });
+    }
+
+    /*
+     * Since accounts are automatically verified during development,
+     * there is no email to resend.
+     */
+
+    if (user.is_email_verified) {
+      return res.json({
+        message: 'Your email is already verified.',
+      });
     }
 
     return res.json({
-      message: 'Email verification is disabled during development.'
+      message: 'Email verification is temporarily disabled during development.',
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('Resend verification error:', err);
+
     return res.status(500).json({
-      error: 'Failed to resend verification email.'
+      error: 'Failed to resend verification email.',
     });
   }
 }
-module.exports = { register, login, verifyEmail, refresh, me, resendVerification };
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+module.exports = {
+  register,
+  login,
+  verifyEmail,
+  refresh,
+  me,
+  resendVerification,
+};
