@@ -33,8 +33,26 @@ export default function AffiliateProducts() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
 
-  const load = () => api.get('/affiliate/products', { params: { q: query || undefined, category: category || undefined } })
-    .then(({ data }) => setProducts(data.products)).catch(() => {});
+  const load = () =>
+  api
+    .get('/affiliate/products', {
+      params: {
+        q: query || undefined,
+        category: category || undefined,
+      },
+    })
+    .then(({ data }) => {
+      console.log("Products:", data);
+      setProducts(data.products || []);
+    })
+    .catch((err) => {
+      console.error("Affiliate Products Error:", err);
+      console.error("Response:", err.response?.data);
+
+      toast.error(
+        err.response?.data?.error || "حدث خطأ أثناء تحميل المنتجات"
+      );
+    });
 
   const loadSaved = () => api.get('/wishlist').then(({ data }) => setSavedIds(new Set(data.products.map((p) => p.id)))).catch(() => {});
 
