@@ -4,7 +4,9 @@ const { nanoid } = require('nanoid');
 const db = require('../config/db');
 const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/jwt');
 const { sendEmail } = require('../utils/email');
-
+// مؤقتًا أثناء التطوير: نعتبر البريد متحققًا منه
+// عند إطلاق الموقع سنعيد تفعيل التحقق عبر Resend.
+const emailVerifyToken = null;
 /**
  * POST /api/auth/register
  * Public registration is affiliate-only in this single-vendor model — the
