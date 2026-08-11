@@ -25,8 +25,10 @@ router.post(
 );
 
 router.get('/verify-email', ctrl.verifyEmail);
+router.post('/resend-verification', requireAuth, ctrl.resendVerification);
+router.post('/forgot-password', ctrl.forgotPassword);
+router.post('/reset-password', ctrl.resetPassword);
 router.post('/refresh', ctrl.refresh);
 router.get('/me', requireAuth, ctrl.me);
-router.post('/resend-verification', requireAuth, ctrl.resendVerification);
 
 module.exports = router;
