@@ -81,8 +81,6 @@ export default function ProductDetail() {
           )}
           <p className="mt-4 text-slate-600 dark:text-slate-300">{product.description}</p>
           <p className="mt-2 text-sm text-slate-500">عمولتك: {product.commission_percent}%</p>
-
-          <p className="mt-4 text-sm text-slate-500">متوفر: {product.stock_quantity} قطعة</p>
         </div>
       </div>
 

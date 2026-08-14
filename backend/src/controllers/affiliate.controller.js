@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const db = require('../config/db');
+const { SAFE_PRODUCT_COLUMNS } = require('./product.controller');
 
 /**
  * POST /api/affiliate/requests   (affiliate requests approval to promote a product)
@@ -138,7 +139,7 @@ async function browseProducts(req, res) {
 
   try {
     const result = await db.query(
-      `SELECT p.*, c.name AS category_name,
+      `SELECT ${SAFE_PRODUCT_COLUMNS}, c.name AS category_name,
               (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               apr.status AS request_status
        FROM products p

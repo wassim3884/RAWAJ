@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, ImageOff } from 'lucide-react';
 import api from '../../../lib/api';
 import { formatDZD } from '../../../lib/currency';
 
@@ -118,7 +118,6 @@ export default function AffiliateProductDetail() {
           <p className="mt-3 text-slate-600 dark:text-slate-300">{product.description}</p>
           <p className="mt-4 text-sm text-slate-500">تكلفتك (سعر الأساس): <span className="font-bold text-slate-800 dark:text-slate-100">{formatDZD(product.price)}</span></p>
           {product.vip_price && <p className="text-sm text-accent">سعر VIP: {formatDZD(product.vip_price)}</p>}
-          <p className="mt-1 text-sm text-slate-500">{product.stock_quantity} قطعة متوفرة</p>
 
           <Link href={`/affiliate/marketing/${product.id}`} className="btn-outline mt-4 inline-flex items-center gap-1 !py-2 text-sm">
             <Megaphone size={14} /> المكتبة التسويقية
@@ -130,6 +129,19 @@ export default function AffiliateProductDetail() {
             ) : product.request_status === 'approved' ? (
               <>
                 <h2 className="mb-4 text-lg font-bold">تقديم عرض لهذا المنتج</h2>
+                <div className="mb-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-700">
+                    {gallery[0] ? (
+                      <Image src={gallery[0].image_url} alt={product.title} fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-slate-300"><ImageOff size={18} /></div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{product.title}</p>
+                    <p className="text-xs text-slate-500">تكلفتك: {formatDZD(product.price)}</p>
+                  </div>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="اسم الزبون">

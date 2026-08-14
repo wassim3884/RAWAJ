@@ -15,6 +15,7 @@ const links = [
   { href: '/admin/delivery-rates', label: 'أسعار التوصيل', icon: Truck },
   { href: '/admin/wholesale', label: 'الجملة', icon: Store },
   { href: '/admin/vip', label: 'VIP', icon: Crown },
+  { href: '/admin/categories', label: 'التصنيفات', icon: Tag },
   { href: '/admin/settings', label: 'إعدادات الموقع', icon: Settings },
 ];
 

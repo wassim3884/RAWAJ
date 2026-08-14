@@ -2,6 +2,19 @@ const { nanoid } = require('nanoid');
 const db = require('../config/db');
 const { notifyOnStatusChange } = require('./interest.controller');
 
+// Columns safe to return to affiliates and the public (excludes internal
+// inventory/ops data — stock_quantity and sku — which is admin-only; see
+// admin.controller.js's listProductsForModeration for the full row).
+// Every customer/affiliate-facing product query below uses this instead of
+// `p.*` so stock levels and SKUs never leave the server on those endpoints.
+const SAFE_PRODUCT_COLUMNS = `
+  p.id, p.seller_id, p.category_id, p.title, p.slug, p.description,
+  p.price, p.compare_at_price, p.commission_percent, p.shipping_info,
+  p.status, p.requires_approval, p.is_featured, p.featured_order,
+  p.vip_price, p.views_count, p.sales_count, p.avg_rating,
+  p.created_at, p.updated_at
+`;
+
 /**
  * POST /api/products  (seller)
  * body: { title, description, price, commissionPercent, stockQuantity, categoryId,
@@ -179,7 +192,7 @@ async function listProducts(req, res) {
 
   try {
     const query = `
-      SELECT p.*, c.name AS category_name, c.slug AS category_slug,
+      SELECT ${SAFE_PRODUCT_COLUMNS}, c.name AS category_name, c.slug AS category_slug,
              (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
@@ -199,7 +212,7 @@ async function getProductBySlug(req, res) {
   const { slug } = req.params;
   try {
     const productResult = await db.query(
-      `SELECT p.*, c.name AS category_name,
+      `SELECT ${SAFE_PRODUCT_COLUMNS}, c.name AS category_name,
               apr.status AS request_status
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
@@ -256,7 +269,7 @@ async function listMyProducts(req, res) {
 async function listUpcomingProducts(req, res) {
   try {
     const result = await db.query(
-      `SELECT p.*, c.name AS category_name,
+      `SELECT ${SAFE_PRODUCT_COLUMNS}, c.name AS category_name,
               (SELECT image_url FROM product_images WHERE product_id = p.id AND category = 'catalog' AND is_primary LIMIT 1) AS primary_image,
               (SELECT COUNT(*) FROM product_interests pi WHERE pi.product_id = p.id) AS interest_count,
               EXISTS(SELECT 1 FROM product_interests pi WHERE pi.product_id = p.id AND pi.affiliate_id = $1) AS is_interested
@@ -310,5 +323,5 @@ async function getMarketingAssets(req, res) {
 
 module.exports = {
   createProduct, updateProduct, deleteProduct, listProducts, getProductBySlug, listMyProducts,
-  listUpcomingProducts, upsertMarketingAssets, getMarketingAssets,
+  listUpcomingProducts, upsertMarketingAssets, getMarketingAssets, SAFE_PRODUCT_COLUMNS,
 };

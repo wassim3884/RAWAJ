@@ -18,6 +18,7 @@ router.get('/analytics', ctrl.getAnalytics);
 
 router.post('/categories', ctrl.createCategory);
 router.get('/categories', ctrl.listCategories);
+router.put('/categories/:id', ctrl.updateCategory);
 
 router.get('/settings/:key', ctrl.getSiteSetting);
 router.put('/settings/:key', ctrl.updateSiteSetting);

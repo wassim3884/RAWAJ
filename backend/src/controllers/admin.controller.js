@@ -176,8 +176,26 @@ async function deleteUser(req, res) {
   }
 }
 
+/** PUT /api/admin/categories/:id — update name/icon (used to attach an
+ *  admin-uploaded image to a category, including ones seeded without one). */
+async function updateCategory(req, res) {
+  const { id } = req.params;
+  const { name, iconUrl } = req.body;
+  try {
+    const result = await db.query(
+      `UPDATE categories SET name = COALESCE($1, name), icon_url = COALESCE($2, icon_url) WHERE id = $3 RETURNING *`,
+      [name || null, iconUrl || null, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Category not found.' });
+    return res.json({ category: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update category.' });
+  }
+}
+
 module.exports = {
   listUsers, setUserStatus, listProductsForModeration, setProductStatus,
   getAnalytics, createCategory, listCategories, updateSiteSetting, getSiteSetting,
-  deleteUser,
+  deleteUser, updateCategory,
 };
