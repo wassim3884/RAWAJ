@@ -57,7 +57,12 @@ export default function AffiliateProducts() {
   const loadSaved = () => api.get('/wishlist').then(({ data }) => setSavedIds(new Set(data.products.map((p) => p.id)))).catch(() => {});
 
   useEffect(() => {
-    load();
+    // load() is intentionally NOT called here — the effect below (which
+    // depends on `category`) already fires once on mount since `category`
+    // starts as ''. Calling load() in both effects fired two parallel
+    // /affiliate/products requests on every page load; when the account is
+    // unverified, each 403 response triggered its own toast, so the
+    // "verify your email" message appeared twice stacked.
     loadSaved();
     api.get('/categories').then(({ data }) => setCategories(data.categories)).catch(() => {});
   }, []);

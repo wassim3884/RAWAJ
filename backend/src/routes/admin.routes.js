@@ -9,6 +9,7 @@ router.use(requireAuth, requireRole('admin'));
 
 router.get('/users', ctrl.listUsers);
 router.put('/users/:id/status', ctrl.setUserStatus);
+router.delete('/users/:id', ctrl.deleteUser);
 
 router.get('/products', ctrl.listProductsForModeration);
 router.put('/products/:id/status', ctrl.setProductStatus);

@@ -145,7 +145,39 @@ async function getSiteSetting(req, res) {
   }
 }
 
+/** DELETE /api/admin/users/:id — permanent delete, affiliates only.
+ *  The `orders` and `commissions` tables reference users(id) WITHOUT
+ *  ON DELETE CASCADE (see schema.sql), so Postgres itself blocks deleting
+ *  an affiliate who has any order/commission history — this rejects with a
+ *  foreign_key_violation (Postgres code 23503), which we turn into a clear
+ *  message instead of a raw DB error. That protection is intentional and
+ *  is not bypassed here: an affiliate with real business history can't be
+ *  hard-deleted, only banned via setUserStatus.
+ */
+async function deleteUser(req, res) {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      `DELETE FROM users WHERE id = $1 AND role = 'affiliate' RETURNING id`,
+      [id]
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'Affiliate not found.' });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'لا يمكن حذف هذا المسوّق نهائيًا لأن لديه طلبات أو عمولات سابقة. استخدم "حظر" بدلًا من ذلك للحفاظ على السجل المالي.',
+      });
+    }
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to delete affiliate.' });
+  }
+}
+
 module.exports = {
   listUsers, setUserStatus, listProductsForModeration, setProductStatus,
   getAnalytics, createCategory, listCategories, updateSiteSetting, getSiteSetting,
+  deleteUser,
 };

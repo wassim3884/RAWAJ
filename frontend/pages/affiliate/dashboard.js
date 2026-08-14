@@ -8,7 +8,7 @@ const links = [
   { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
   { href: '/affiliate/products', label: 'منتجات', icon: Search },
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
+  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
   { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
   { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
   { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },

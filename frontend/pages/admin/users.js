@@ -33,6 +33,20 @@ export default function AdminUsers() {
     }
   };
 
+  const deleteAffiliate = async (user) => {
+    const confirmed = window.confirm(
+      `هل أنت متأكد من حذف "${user.full_name}" نهائيًا؟ هذا الإجراء لا يمكن التراجع عنه.`
+    );
+    if (!confirmed) return;
+    try {
+      await api.delete(`/admin/users/${user.id}`);
+      toast.success('تم حذف المسوّق نهائيًا.');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'فشل حذف المسوّق.');
+    }
+  };
+
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
       <DashboardSidebar links={links} />
@@ -77,6 +91,11 @@ export default function AdminUsers() {
                     <button onClick={() => toggleStatus(u)} className="text-sm font-medium text-primary">
                       {u.is_active ? 'Ban' : 'Reactivate'}
                     </button>
+                    {u.role === 'affiliate' && (
+                      <button onClick={() => deleteAffiliate(u)} className="mr-3 text-sm font-medium text-red-600">
+                        حذف نهائيًا
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
