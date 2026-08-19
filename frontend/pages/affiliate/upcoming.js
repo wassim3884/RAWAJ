@@ -4,17 +4,7 @@ import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 import { formatDZD } from '../../lib/currency';
-
-const links = [
-  { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: ' منتجات', icon: Search },
-  { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
-  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
-  { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
-  { href: '/affiliate/vip', label: 'VIP', icon: Crown },
-  { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
-];
+import { AFFILIATE_NAV_LINKS } from '../../lib/affiliateNav';
 
 export default function UpcomingProducts() {
   const [products, setProducts] = useState([]);
@@ -39,7 +29,7 @@ export default function UpcomingProducts() {
 
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
-      <DashboardSidebar links={links} />
+      <DashboardSidebar links={AFFILIATE_NAV_LINKS} />
       <div className="flex-1 p-6">
         <h1 className="mb-2 text-2xl font-bold">منتجات قادمة قريبًا</h1>
         <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">

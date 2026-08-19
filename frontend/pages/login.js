@@ -42,7 +42,10 @@ export default function Login() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">{t('Password')}</label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="block text-sm font-medium">{t('Password')}</label>
+            <Link href="/forgot-password" className="text-sm font-medium text-primary">{t('نسيت كلمة السر؟')}</Link>
+          </div>
           <input
             type="password" required value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}

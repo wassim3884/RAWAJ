@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 import { formatDZD } from '../../lib/currency';
+import { AFFILIATE_NAV_LINKS } from '../../lib/affiliateNav';
 
 // Same Algerian mobile format used across the project (see pages/register.js
 // and backend/src/routes/auth.routes.js) — reused here rather than inventing
@@ -17,17 +18,6 @@ const METHOD_LABELS = {
   redotpay: 'RedotPay',
 };
 const METHOD_NEEDS_PHONE = new Set(['flexy']);
-
-const links = [
-  { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'منتجات', icon: Search },
-  { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },  
-  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
-  { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
-  { href: '/affiliate/vip', label: 'VIP', icon: Crown },
-  { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
-];
 
 export default function AffiliateEarnings() {
   const [stats, setStats] = useState(null);
@@ -111,7 +101,7 @@ export default function AffiliateEarnings() {
 
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
-      <DashboardSidebar links={links} />
+      <DashboardSidebar links={AFFILIATE_NAV_LINKS} />
       <div className="flex-1 p-6">
         <h1 className="mb-6 text-2xl font-bold">الأرباح والسحوبات</h1>
 

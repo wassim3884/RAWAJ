@@ -2,6 +2,21 @@ const { nanoid } = require('nanoid');
 const db = require('../config/db');
 const { notifyOnStatusChange } = require('./interest.controller');
 
+// vip_price must only reach affiliates who are actually flagged is_vip —
+// it was being sent unconditionally to everyone before this fix (schema.sql
+// documents the intent: "discounted price shown only to VIP affiliates").
+// Doing this server-side (not just hiding it in the UI) means a non-VIP
+// affiliate can't see it even by reading the raw API response.
+async function stripVipPriceIfNotEligible(rows, req) {
+  let isVip = false;
+  if (req.user?.role === 'affiliate') {
+    const r = await db.query('SELECT is_vip FROM affiliate_profiles WHERE user_id = $1', [req.user.id]);
+    isVip = !!r.rows[0]?.is_vip;
+  }
+  if (isVip) return rows;
+  return rows.map((row) => ({ ...row, vip_price: null }));
+}
+
 // Columns safe to return to affiliates and the public (excludes internal
 // inventory/ops data — stock_quantity and sku — which is admin-only; see
 // admin.controller.js's listProductsForModeration for the full row).
@@ -200,7 +215,8 @@ async function listProducts(req, res) {
       ORDER BY ${orderBy}
       LIMIT $${idx} OFFSET $${idx + 1}`;
     const result = await db.query(query, values);
-    return res.json({ products: result.rows, page: Number(page), limit: Number(limit) });
+    const products = await stripVipPriceIfNotEligible(result.rows, req);
+    return res.json({ products, page: Number(page), limit: Number(limit) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to fetch products.' });
@@ -221,7 +237,7 @@ async function getProductBySlug(req, res) {
       [slug, req.user?.id || null]
     );
     if (!productResult.rows.length) return res.status(404).json({ error: 'Product not found.' });
-    const product = productResult.rows[0];
+    const [product] = await stripVipPriceIfNotEligible(productResult.rows, req);
 
     const [images, reviews] = await Promise.all([
       db.query('SELECT image_url, category, is_primary FROM product_images WHERE product_id = $1 ORDER BY sort_order', [product.id]),
@@ -279,7 +295,7 @@ async function listUpcomingProducts(req, res) {
        ORDER BY p.created_at DESC`,
       [req.user.id]
     );
-    return res.json({ products: result.rows });
+    return res.json({ products: await stripVipPriceIfNotEligible(result.rows, req) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to fetch upcoming products.' });
@@ -324,4 +340,5 @@ async function getMarketingAssets(req, res) {
 module.exports = {
   createProduct, updateProduct, deleteProduct, listProducts, getProductBySlug, listMyProducts,
   listUpcomingProducts, upsertMarketingAssets, getMarketingAssets, SAFE_PRODUCT_COLUMNS,
+  stripVipPriceIfNotEligible,
 };

@@ -152,10 +152,17 @@ async function updateOrderStatus(req, res) {
   try {
     await client.query('BEGIN');
 
+    // $1 is used twice below: once assigned to the order_status ENUM column,
+    // and once compared against text literals in the CASE. Without explicit
+    // casts, Postgres can't settle on one type for $1 across both uses and
+    // rejects the whole query with "inconsistent types deduced for parameter
+    // $1" — this was the actual cause of every "Failed to update order
+    // status" error, confirmed by reproducing it against a real Postgres 16
+    // instance loaded from schema.sql (every transition failed identically).
     const orderResult = await client.query(
-      `UPDATE orders SET order_status = $1, admin_call_status = COALESCE($2, admin_call_status),
+      `UPDATE orders SET order_status = $1::order_status, admin_call_status = COALESCE($2, admin_call_status),
          tracking_number = COALESCE($3, tracking_number),
-         failure_reason = CASE WHEN $1 IN ('no_answer','cancelled','refunded') THEN COALESCE($5, failure_reason) ELSE failure_reason END,
+         failure_reason = CASE WHEN $1::text IN ('no_answer','cancelled','refunded') THEN COALESCE($5, failure_reason) ELSE failure_reason END,
          updated_at = NOW()
        WHERE id = $4 RETURNING *`,
       [status, adminCallStatus || null, trackingNumber || null, id, failureReason || null]

@@ -4,17 +4,7 @@ import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 import { subscribeToPush } from '../../lib/push';
-
-const links = [
-  { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'منتجات', icon: Search },
-  { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin }, 
-  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
-  { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
-  { href: '/affiliate/vip', label: 'VIP', icon: Crown },
-  { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
-];
+import { AFFILIATE_NAV_LINKS } from '../../lib/affiliateNav';
 
 export default function AffiliateNotifications() {
   const [notifications, setNotifications] = useState([]);
@@ -47,7 +37,7 @@ export default function AffiliateNotifications() {
 
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
-      <DashboardSidebar links={links} />
+      <DashboardSidebar links={AFFILIATE_NAV_LINKS} />
       <div className="flex-1 p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold">الإشعارات</h1>

@@ -4,17 +4,7 @@ import toast from 'react-hot-toast';
 import DashboardSidebar from '../../components/DashboardSidebar';
 import api from '../../lib/api';
 import { formatDZD } from '../../lib/currency';
-
-const links = [
-  { href: '/affiliate/dashboard', label: 'نظرة عامة', icon: LayoutDashboard },
-  { href: '/affiliate/products', label: 'منتجات', icon: Search },
-  { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
-  { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart }, { href: '/affiliate/delivery-rates', label: 'أسعار التوصيل', icon: MapPin },
-  { href: '/affiliate/orders', label: 'طلباتي', icon: Truck },
-  { href: '/affiliate/earnings', label: 'الأرباح', icon: Wallet },
-  { href: '/affiliate/vip', label: 'VIP', icon: Crown },
-  { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
-];
+import { AFFILIATE_NAV_LINKS } from '../../lib/affiliateNav';
 
 export default function AffiliateVip() {
   const [eligibility, setEligibility] = useState(null);
@@ -75,7 +65,7 @@ export default function AffiliateVip() {
   if (!eligibility) {
     return (
       <div className="flex min-h-[80vh] flex-col md:flex-row">
-        <DashboardSidebar links={links} />
+        <DashboardSidebar links={AFFILIATE_NAV_LINKS} />
         <div className="flex-1 p-6">Loading...</div>
       </div>
     );
@@ -83,7 +73,7 @@ export default function AffiliateVip() {
 
   return (
     <div className="flex min-h-[80vh] flex-col md:flex-row">
-      <DashboardSidebar links={links} />
+      <DashboardSidebar links={AFFILIATE_NAV_LINKS} />
       <div className="flex-1 p-6">
         <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold">
           <Crown className="text-accent" size={26} /> VIP Program

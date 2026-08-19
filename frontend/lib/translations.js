@@ -15,6 +15,19 @@ const dict = {
   'المحفوظة': { en: 'Saved', fr: 'Enregistrés' },
   'الجملة': { en: 'Wholesale', fr: 'Gros' },
 
+  // Affiliate dashboard (Phase 3)
+  'مرحبًا': { en: 'Welcome', fr: 'Bienvenue' },
+  'مرحبًا بك في RAWAJ': { en: 'Welcome to RAWAJ', fr: 'Bienvenue sur RAWAJ' },
+  'إليك نظرة سريعة على أدائك واكتشاف منتجات جديدة لتسويقها.': {
+    en: "Here's a quick look at your performance and new products to promote.",
+    fr: "Voici un aperçu rapide de vos performances et de nouveaux produits à promouvoir.",
+  },
+  'تصفّح حسب الفئة': { en: 'Browse by category', fr: 'Parcourir par catégorie' },
+  'منتجات مميزة': { en: 'Featured products', fr: 'Produits en vedette' },
+  'أحدث المنتجات': { en: 'Newest products', fr: 'Derniers produits' },
+  'عرض الكل': { en: 'View all', fr: 'Voir tout' },
+  'تقديم طلب': { en: 'Place order', fr: 'Passer commande' },
+
   // Footer
   'الشركة': { en: 'Company', fr: 'Entreprise' },
   'من نحن': { en: 'About', fr: 'À propos' },

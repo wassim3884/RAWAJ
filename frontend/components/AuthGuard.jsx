@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   '/register',
   '/verify-email',
   '/verify-notice',
+  '/forgot-password',
+  '/reset-password',
   '/about',
   '/blog',
   '/contact',

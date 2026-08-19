@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const db = require('../config/db');
-const { SAFE_PRODUCT_COLUMNS } = require('./product.controller');
+const { SAFE_PRODUCT_COLUMNS, stripVipPriceIfNotEligible } = require('./product.controller');
 
 /**
  * POST /api/affiliate/requests   (affiliate requests approval to promote a product)
@@ -123,7 +123,7 @@ async function getStats(req, res) {
  * GET /api/affiliate/products  (browse approved + approvable products)
  */
 async function browseProducts(req, res) {
-  const { category, q } = req.query;
+  const { category, q, featured, sort, limit } = req.query;
   const conditions = [`p.status = 'active'`];
   const values = [req.user.id];
   let idx = 2;
@@ -136,6 +136,23 @@ async function browseProducts(req, res) {
     conditions.push(`p.title ILIKE $${idx++}`);
     values.push(`%${q}%`);
   }
+  if (featured === 'true') {
+    conditions.push(`p.is_featured = TRUE`);
+  }
+
+  // Mirrors the sort options already supported by the public product.controller.js
+  // listProducts — same option names, same meaning, nothing invented.
+  const sortMap = {
+    newest: 'p.created_at DESC',
+    best_selling: 'p.sales_count DESC',
+    top_rated: 'p.avg_rating DESC',
+  };
+  const orderBy = featured === 'true' ? 'p.featured_order ASC, p.created_at DESC' : (sortMap[sort] || 'p.created_at DESC');
+  // Reject a garbage `limit` (e.g. "abc", "-5") by simply ignoring it rather
+  // than letting a NaN reach Postgres and turn into an opaque 500.
+  const parsedLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : null;
+  const limitClause = parsedLimit ? ` LIMIT $${idx++}` : '';
+  if (parsedLimit) values.push(parsedLimit);
 
   try {
     const result = await db.query(
@@ -146,10 +163,10 @@ async function browseProducts(req, res) {
        LEFT JOIN categories c ON c.id = p.category_id
        LEFT JOIN affiliate_product_requests apr ON apr.product_id = p.id AND apr.affiliate_id = $1
        WHERE ${conditions.join(' AND ')}
-       ORDER BY p.created_at DESC`,
+       ORDER BY ${orderBy}${limitClause}`,
       values
     );
-    return res.json({ products: result.rows });
+    return res.json({ products: await stripVipPriceIfNotEligible(result.rows, req) });
   } catch (err) {
     console.error('[Affiliate] Error browsing products:', err);
     return res.status(500).json({ error: 'Failed to fetch products.' });
