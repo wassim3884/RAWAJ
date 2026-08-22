@@ -116,11 +116,18 @@ async function decideWithdrawal(req, res) {
       await client.query(`UPDATE ${table} SET balance = balance + $1 WHERE user_id = $2`, [withdrawal.amount, withdrawal.user_id]);
     }
 
+    // Same root cause as the earlier order-status bug: $1 was used both as
+    // `status = $1` (assigned to the withdrawal_status ENUM column) and in
+    // `$1 = 'approved'` / `$1 = 'paid'` (compared as text) within the same
+    // query. Postgres can't settle on one type for $1 across both uses and
+    // rejects the whole query with "inconsistent types deduced for
+    // parameter $1" — every decision failed with the generic "Failed to
+    // update withdrawal." message because of this, not a business-logic bug.
     const result = await client.query(
       `UPDATE withdrawal_requests SET
-         status = $1, admin_note = $2,
-         approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END,
-         processed_at = CASE WHEN $1 = 'paid' THEN NOW() ELSE processed_at END
+         status = $1::withdrawal_status, admin_note = $2,
+         approved_at = CASE WHEN $1::text = 'approved' THEN NOW() ELSE approved_at END,
+         processed_at = CASE WHEN $1::text = 'paid' THEN NOW() ELSE processed_at END
        WHERE id = $3 RETURNING *`,
       [decision, adminNote || null, id]
     );

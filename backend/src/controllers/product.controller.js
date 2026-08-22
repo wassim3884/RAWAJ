@@ -112,6 +112,13 @@ async function updateProduct(req, res) {
     'category_id', 'sku', 'shipping_info', 'requires_approval', 'status',
     'is_featured', 'featured_order', 'vip_price',
   ];
+  // Same enum values PostgreSQL actually accepts for products.status
+  // (see schema.sql) — validated here so a bad value returns a clean 400
+  // instead of an opaque 500 from the database's own enum constraint.
+  const VALID_STATUSES = ['draft', 'pending', 'active', 'rejected', 'out_of_stock', 'coming_soon'];
+  if (req.body.status !== undefined && !VALID_STATUSES.includes(req.body.status)) {
+    return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
+  }
   const updates = [];
   const values = [];
   let idx = 1;
@@ -337,8 +344,62 @@ async function getMarketingAssets(req, res) {
   }
 }
 
+/**
+ * PUT /api/products/:id/images  (admin)
+ * body: { catalogImages: [url,...], realImages: [url,...], landingImages: [url,...] }
+ *
+ * There was previously NO way to change a product's images after creation —
+ * createProduct inserts product_images rows once, but updateProduct's
+ * allowlist never touched that table. This is the root cause behind
+ * "cannot change product image / add / replace images" from the admin
+ * panel. Each array here fully replaces that category's images (matching
+ * the same catalog/real/landing shape createProduct already uses) rather
+ * than trying to diff individual images — simplest safe semantics for a
+ * single-admin panel, and avoids inventing a whole extra add/remove/reorder
+ * protocol the current architecture has no other example of.
+ */
+async function updateProductImages(req, res) {
+  const { id } = req.params;
+  const { catalogImages = [], realImages = [], landingImages = [] } = req.body;
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    const existing = await client.query('SELECT id FROM products WHERE id = $1', [id]);
+    if (!existing.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    await client.query('DELETE FROM product_images WHERE product_id = $1', [id]);
+
+    const imageGroups = [
+      { category: 'catalog', urls: catalogImages },
+      { category: 'real', urls: realImages },
+      { category: 'landing', urls: landingImages },
+    ];
+    for (const group of imageGroups) {
+      for (let i = 0; i < group.urls.length; i++) {
+        await client.query(
+          `INSERT INTO product_images (product_id, image_url, category, sort_order, is_primary)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [id, group.urls[i], group.category, i, group.category === 'catalog' && i === 0]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, catalogImages, realImages, landingImages });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update product images.' });
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   createProduct, updateProduct, deleteProduct, listProducts, getProductBySlug, listMyProducts,
   listUpcomingProducts, upsertMarketingAssets, getMarketingAssets, SAFE_PRODUCT_COLUMNS,
-  stripVipPriceIfNotEligible,
+  stripVipPriceIfNotEligible, updateProductImages,
 };

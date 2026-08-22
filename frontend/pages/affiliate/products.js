@@ -19,6 +19,7 @@ export default function AffiliateProducts() {
   const [savedIds, setSavedIds] = useState(new Set());
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
 
   // Supports arriving here with a pre-selected category, e.g. the "🏷️
@@ -60,11 +61,14 @@ export default function AffiliateProducts() {
   };
   const endDrag = () => { dragState.current.down = false; };
 
-  const load = () =>
-    api
+  const load = () => {
+    setLoading(true);
+    return api
       .get('/affiliate/products', { params: { q: query || undefined, category: category || undefined } })
       .then(({ data }) => setProducts(data.products || []))
-      .catch((err) => toast.error(err.response?.data?.error || 'حدث خطأ أثناء تحميل المنتجات'));
+      .catch((err) => toast.error(err.response?.data?.error || 'حدث خطأ أثناء تحميل المنتجات'))
+      .finally(() => setLoading(false));
+  };
 
   const loadSaved = () => api.get('/wishlist').then(({ data }) => setSavedIds(new Set(data.products.map((p) => p.id)))).catch(() => {});
 
@@ -179,7 +183,18 @@ export default function AffiliateProducts() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => (
+          {loading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card animate-pulse overflow-hidden !p-0">
+                <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-800" />
+                <div className="space-y-2 p-4">
+                  <div className="h-3 w-16 rounded bg-slate-100 dark:bg-slate-800" />
+                  <div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-800" />
+                  <div className="h-3 w-20 rounded bg-slate-100 dark:bg-slate-800" />
+                </div>
+              </div>
+            ))
+          ) : products.map((p) => (
             <div key={p.id} className="card group relative flex flex-col overflow-hidden !p-0 transition hover:shadow-lg">
               <button
                 onClick={(e) => toggleSave(e, p)}
@@ -204,6 +219,9 @@ export default function AffiliateProducts() {
                     <span className="text-xs">لا توجد صورة</span>
                   </div>
                 )}
+                {p.is_featured && (
+                  <span className="absolute right-3 top-3 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-white">مميز</span>
+                )}
                 {p.status === 'out_of_stock' && (
                   <span className="absolute right-3 top-3 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">نفدت الكمية</span>
                 )}
@@ -217,6 +235,7 @@ export default function AffiliateProducts() {
                   {p.title}
                 </Link>
                 <p className="text-sm text-slate-500">تكلفتك: <span className="font-bold text-slate-800 dark:text-slate-100">{formatDZD(p.price)}</span></p>
+                {p.vip_price && <p className="text-xs font-medium text-accent">VIP: {formatDZD(p.vip_price)}</p>}
 
                 <Link
                   href={`/affiliate/products/${p.slug}`}
@@ -227,7 +246,7 @@ export default function AffiliateProducts() {
               </div>
             </div>
           ))}
-          {!products.length && <p className="col-span-full text-slate-400">لا توجد منتجات.</p>}
+          {!loading && !products.length && <p className="col-span-full text-slate-400">لا توجد منتجات.</p>}
         </div>
       </div>
     </div>

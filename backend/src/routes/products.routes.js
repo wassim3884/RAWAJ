@@ -11,6 +11,7 @@ const interestCtrl = require('../controllers/interest.controller');
 router.get('/mine', requireAuth, requireRole('admin'), ctrl.listMyProducts);
 router.post('/', requireAuth, requireRole('admin'), ctrl.createProduct);
 router.put('/:id', requireAuth, requireRole('admin'), ctrl.updateProduct);
+router.put('/:id/images', requireAuth, requireRole('admin'), ctrl.updateProductImages);
 router.delete('/:id', requireAuth, requireRole('admin'), ctrl.deleteProduct);
 
 router.put('/:id/marketing', requireAuth, requireRole('admin'), ctrl.upsertMarketingAssets);

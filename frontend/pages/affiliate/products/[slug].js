@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { ImageOff, Copy, Star, X, ZoomIn } from 'lucide-react';
+import { ImageOff, Copy, Star, X, ZoomIn, Download, ChevronLeft } from 'lucide-react';
 import api from '../../../lib/api';
 import { formatDZD } from '../../../lib/currency';
 
@@ -61,15 +62,79 @@ export default function AffiliateProductDetail() {
     return () => window.removeEventListener('keydown', onEsc);
   }, []);
 
-  const copyText = (text) => {
-    navigator.clipboard.writeText(text);
-    toast.success('تم النسخ!');
+  // Real Clipboard API usage with a proper fallback: navigator.clipboard
+  // requires a secure (HTTPS) context and isn't available in every browser,
+  // so a failure falls back to the classic hidden-textarea + execCommand
+  // trick instead of silently doing nothing.
+  const copyText = async (text, successMessage = 'تم النسخ!') => {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+      toast.success(successMessage);
+    } catch {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) toast.success(successMessage);
+        else throw new Error('execCommand failed');
+      } catch {
+        toast.error('تعذّر النسخ التلقائي. انسخ النص يدويًا.');
+      }
+    }
   };
 
   // Main product gallery = catalog + "real" (post-delivery) photos.
   // Landing-page images are a distinct marketing asset (see schema.sql:
   // product_images.category) and get their own section below, framed
   // differently so they never look like a regular product photo.
+  // Real download, not a decorative button. Cloudinary lets us force a true
+  // download (Content-Disposition: attachment) via the `fl_attachment` URL
+  // flag — this works even cross-origin, unlike a client-side fetch+blob
+  // approach which Cloudinary's video CORS policy doesn't reliably support.
+  // For a non-Cloudinary URL we fall back to a plain anchor-download; that
+  // only succeeds when the browser treats the resource as same-origin/
+  // CORS-permissive, otherwise the browser opens it in a new tab instead of
+  // downloading — a real browser limitation, not something client JS can
+  // override, and we don't pretend otherwise.
+  const downloadFile = (url, filename) => {
+    if (!url) return;
+    try {
+      const downloadUrl = url.includes('res.cloudinary.com') && !url.includes('fl_attachment')
+        ? url.replace('/upload/', '/upload/fl_attachment/')
+        : url;
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename || '';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      toast.error('تعذّر بدء التحميل.');
+    }
+  };
+
+  const downloadAllVideos = (urls) => {
+    if (!urls.length) return;
+    // Staggered rather than simultaneous: browsers throttle/block several
+    // downloads triggered in the same tick, so one failing shouldn't stop
+    // the rest — each is an independent, isolated attempt.
+    urls.forEach((url, i) => setTimeout(() => downloadFile(url, `video-${i + 1}.mp4`), i * 400));
+    toast.success(`جاري تحميل ${urls.length} فيديو...`);
+  };
+
   const gallery = [...images.catalog, ...images.real];
   const extraImages = parseJsonArray(marketingKit?.image_urls);
   const videoUrls = parseJsonArray(marketingKit?.video_urls);
@@ -121,6 +186,15 @@ export default function AffiliateProductDetail() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-slate-400">
+        <Link href="/affiliate/dashboard" className="hover:text-primary">الرئيسية</Link>
+        <ChevronLeft size={14} />
+        <Link href="/affiliate/products" className="hover:text-primary">المنتجات</Link>
+        <ChevronLeft size={14} />
+        <span className="line-clamp-1 text-slate-600 dark:text-slate-300">{product.title}</span>
+      </nav>
+
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         {/* ============ 1. MEDIA ============ */}
         <div>
@@ -161,7 +235,17 @@ export default function AffiliateProductDetail() {
           {product.category_name && (
             <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{product.category_name}</span>
           )}
-          <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{product.title}</h1>
+          <h1 className="mt-3 flex items-start gap-2 text-2xl font-bold sm:text-3xl">
+            <span>{product.title}</span>
+            <button
+              onClick={() => copyText(product.title, 'تم نسخ العنوان')}
+              aria-label="نسخ العنوان"
+              title="نسخ العنوان"
+              className="mt-1 shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-800"
+            >
+              <Copy size={16} />
+            </button>
+          </h1>
 
           <div className="mt-3 flex items-baseline gap-3">
             <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{formatDZD(product.price)}</span>
@@ -262,7 +346,15 @@ export default function AffiliateProductDetail() {
       {/* ============ 7. DESCRIPTION ============ */}
       {product.description && (
         <section className="mt-12 border-t border-slate-100 pt-8 dark:border-slate-800">
-          <h2 className="mb-3 text-xl font-bold">وصف المنتج</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold">وصف المنتج</h2>
+            <button
+              onClick={() => copyText(product.description, 'تم نسخ الوصف')}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-500 transition hover:border-primary hover:text-primary dark:border-slate-700"
+            >
+              <Copy size={14} /> نسخ الوصف
+            </button>
+          </div>
           <p className="whitespace-pre-line leading-relaxed text-slate-600 dark:text-slate-300">{product.description}</p>
         </section>
       )}
@@ -330,14 +422,31 @@ export default function AffiliateProductDetail() {
         </section>
       )}
 
-      {/* ============ 10. VIDEO — real <video> players, muted, no autoplay ============ */}
+      {/* ============ 10. VIDEO — real <video> players, muted, no autoplay, real downloads ============ */}
       {videoUrls.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">فيديو المنتج</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold">الفيديوهات الإعلانية</h2>
+            {videoUrls.length > 1 && (
+              <button
+                onClick={() => downloadAllVideos(videoUrls)}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-300"
+              >
+                <Download size={14} /> تحميل جميع الفيديوهات
+              </button>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {videoUrls.map((url, i) => (
-              <video key={i} src={url} controls muted playsInline preload="metadata"
-                className="aspect-video w-full rounded-2xl bg-black" />
+              <div key={i} className="overflow-hidden rounded-2xl bg-black">
+                <video src={url} controls muted playsInline preload="metadata" className="aspect-video w-full" />
+                <button
+                  onClick={() => downloadFile(url, `video-${i + 1}.mp4`)}
+                  className="flex w-full items-center justify-center gap-1.5 bg-slate-900 py-2 text-sm text-white transition hover:bg-slate-800"
+                >
+                  <Download size={14} /> تحميل الفيديو
+                </button>
+              </div>
             ))}
           </div>
         </section>
@@ -347,12 +456,29 @@ export default function AffiliateProductDetail() {
            for a regular product photo, contain (never stretched/cropped) ============ */}
       {images.landing.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-1 text-xl font-bold">صفحة هبوط جاهزة</h2>
-          <p className="mb-4 text-sm text-slate-500">مصمَّمة خصيصًا للتسويق — احفظها أو استخدمها في إعلاناتك.</p>
+          <h2 className="mb-1 text-xl font-bold">صفحات الهبوط</h2>
+          <p className="mb-4 text-sm text-slate-500">مصمَّمة خصيصًا للتسويق — استخدمها في إعلاناتك.</p>
           <div className="space-y-4">
             {images.landing.map((img, i) => (
-              <div key={i} className="flex justify-center overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-                <img src={img.image_url} alt="صفحة هبوط" className="max-h-[600px] w-auto object-contain" />
+              <div key={i} className="overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50">
+                <div className="flex justify-center p-3">
+                  <img src={img.image_url} alt="صفحة هبوط" className="max-h-[600px] w-auto object-contain" />
+                </div>
+                <div className="flex border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={() => downloadFile(img.image_url, `landing-page-${i + 1}.jpg`)}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm text-slate-600 transition hover:text-primary dark:text-slate-300"
+                  >
+                    <Download size={14} /> تحميل الصورة
+                  </button>
+                  <div className="w-px bg-slate-200 dark:bg-slate-700" />
+                  <button
+                    onClick={() => copyText(img.image_url, 'تم نسخ رابط الصورة')}
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm text-slate-600 transition hover:text-primary dark:text-slate-300"
+                  >
+                    <Copy size={14} /> نسخ الرابط
+                  </button>
+                </div>
               </div>
             ))}
           </div>
