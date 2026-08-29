@@ -544,6 +544,130 @@ async function resetPassword(req, res) {
 
 
 // ============================================================
+// UPDATE OWN PROFILE
+// PUT /api/auth/me
+// ============================================================
+
+async function updateProfile(req, res) {
+  const { fullName, email, phone } = req.body;
+  const updates = [];
+  const values = [];
+  let idx = 1;
+
+  if (fullName !== undefined) { updates.push(`full_name = $${idx++}`); values.push(fullName); }
+  if (phone !== undefined) { updates.push(`phone = $${idx++}`); values.push(phone); }
+  if (email !== undefined) {
+    const normalizedEmail = email.toLowerCase();
+    const existing = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [normalizedEmail, req.user.id]);
+    if (existing.rows.length) {
+      return res.status(409).json({ error: 'This email is already in use.' });
+    }
+    updates.push(`email = $${idx++}`);
+    values.push(normalizedEmail);
+  }
+
+  if (!updates.length) {
+    return res.status(400).json({ error: 'No fields to update.' });
+  }
+
+  values.push(req.user.id);
+  try {
+    const result = await db.query(
+      `UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${idx} RETURNING id, full_name, email, phone, role, is_email_verified`,
+      values
+    );
+    return res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update profile.' });
+  }
+}
+
+
+// ============================================================
+// CHANGE OWN PASSWORD (while logged in — different from the
+// forgot/reset-password flow above, which is for logged-out users)
+// PUT /api/auth/me/password
+// ============================================================
+
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'currentPassword and newPassword are required.' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+  }
+
+  try {
+    const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [passwordHash, req.user.id]);
+    return res.json({ message: 'Password changed successfully.' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to change password.' });
+  }
+}
+
+
+// ============================================================
+// DELETE OWN ACCOUNT (permanent)
+// DELETE /api/auth/me
+// ============================================================
+
+async function deleteOwnAccount(req, res) {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ error: 'Password confirmation is required to delete your account.' });
+  }
+
+  try {
+    const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Incorrect password.' });
+    }
+
+    // orders/commissions reference users(id) WITHOUT ON DELETE CASCADE, so
+    // Postgres itself blocks the delete for those (caught below as 23503).
+    // withdrawal_requests.user_id IS CASCADE though, so it would NOT block
+    // and would silently wipe paid/approved withdrawal history — checked
+    // explicitly here so that record gets the same protection.
+    const hasWithdrawals = await db.query('SELECT 1 FROM withdrawal_requests WHERE user_id = $1 LIMIT 1', [req.user.id]);
+    if (hasWithdrawals.rows.length) {
+      return res.status(409).json({
+        error: 'لا يمكن حذف حسابك نهائيًا لأن لديك سجل سحوبات سابق. تواصل مع الدعم إن كنت ترغب فعلاً في إغلاق حسابك.',
+      });
+    }
+
+    await db.query('DELETE FROM users WHERE id = $1', [req.user.id]);
+    return res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'لا يمكن حذف حسابك نهائيًا لأن لديك طلبات أو عمولات سابقة مرتبطة به. تواصل مع الدعم إن كنت ترغب فعلاً في إغلاق حسابك.',
+      });
+    }
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to delete account.' });
+  }
+}
+
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
@@ -556,4 +680,7 @@ module.exports = {
   resendVerification,
   forgotPassword,
   resetPassword,
+  updateProfile,
+  changePassword,
+  deleteOwnAccount,
 };

@@ -45,4 +45,35 @@ router.post(
 router.post('/refresh', ctrl.refresh);
 router.get('/me', requireAuth, ctrl.me);
 
+router.put(
+  '/me',
+  requireAuth,
+  [
+    body('fullName').optional().trim().notEmpty().withMessage('Full name cannot be empty'),
+    body('email').optional().isEmail().withMessage('Valid email is required'),
+    body('phone').optional().matches(/^0[567]\d{8}$/).withMessage('رقم الهاتف يجب أن يبدأ بـ 05 أو 06 أو 07 ويتكوّن من 10 أرقام.'),
+  ],
+  validate,
+  ctrl.updateProfile
+);
+
+router.put(
+  '/me/password',
+  requireAuth,
+  [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  ],
+  validate,
+  ctrl.changePassword
+);
+
+router.delete(
+  '/me',
+  requireAuth,
+  [body('password').notEmpty().withMessage('Password confirmation is required')],
+  validate,
+  ctrl.deleteOwnAccount
+);
+
 module.exports = router;

@@ -165,6 +165,18 @@ async function getSiteSetting(req, res) {
 async function deleteUser(req, res) {
   const { id } = req.params;
   try {
+    // withdrawal_requests.user_id is ON DELETE CASCADE (unlike orders/
+    // commissions, which block deletion via a plain FK) — so a hard delete
+    // would silently wipe paid/approved withdrawal history instead of being
+    // rejected by Postgres. Checked explicitly here so that financial
+    // record is protected the same way orders/commissions already are.
+    const hasWithdrawals = await db.query('SELECT 1 FROM withdrawal_requests WHERE user_id = $1 LIMIT 1', [id]);
+    if (hasWithdrawals.rows.length) {
+      return res.status(409).json({
+        error: 'لا يمكن حذف هذا المسوّق نهائيًا لأن لديه سجل سحوبات سابق. استخدم "حظر" بدلًا من ذلك للحفاظ على السجل المالي.',
+      });
+    }
+
     const result = await db.query(
       `DELETE FROM users WHERE id = $1 AND role = 'affiliate' RETURNING id`,
       [id]

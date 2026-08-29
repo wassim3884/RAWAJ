@@ -1,4 +1,4 @@
-import { LayoutDashboard, Search, Truck, Wallet, Crown, MapPin, Clock, Heart, Bell } from 'lucide-react';
+import { LayoutDashboard, Search, Truck, Wallet, Crown, MapPin, Clock, Heart, Bell, Settings } from 'lucide-react';
 
 // Single source of truth for the affiliate sidebar. Every affiliate page
 // previously redefined this exact array locally (10 copies) — that
@@ -21,4 +21,5 @@ export const AFFILIATE_NAV_LINKS = [
   { href: '/affiliate/upcoming', label: 'قادمة قريبًا', icon: Clock },
   { href: '/affiliate/saved', label: 'المحفوظة', icon: Heart },
   { href: '/affiliate/notifications', label: 'الإشعارات', icon: Bell },
+  { href: '/affiliate/settings', label: 'الإعدادات', icon: Settings },
 ];

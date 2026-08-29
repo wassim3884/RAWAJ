@@ -200,6 +200,9 @@ export default function AffiliateEarnings() {
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.color}`}>{meta.label}</span>
                       {eta !== null && <span className="mr-2 text-xs text-slate-400">(متبقٍ {eta} ساعة)</span>}
+                      {w.status === 'rejected' && w.admin_note && (
+                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">السبب: {w.admin_note}</p>
+                      )}
                     </td>
                     <td className="px-4 py-3">{new Date(w.requested_at).toLocaleDateString()}</td>
                   </tr>
